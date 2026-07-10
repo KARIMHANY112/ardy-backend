@@ -1,0 +1,16 @@
+services:
+  db:
+    image: ankane/pgvector:latest
+    restart: always
+    environment:
+      POSTGRES_USER: ardy
+      POSTGRES_PASSWORD: ardy
+      POSTGRES_DB: ardy
+    ports:
+      - "5432:5432"
+    volumes:
+      - ardy_pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  ardy_pgdata:

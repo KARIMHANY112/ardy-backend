@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /tmp/ardy-backend-check)",
+      "Bash(unzip -o \"/c/Users/karim/Downloads/ardy-backend.zip\" -d /tmp/ardy-backend-check)",
+      "Read(//tmp/**)",
+      "Bash(find /c/Users/karim/development/ardy -type f -not -path \"*/\\\\.*\")",
+      "Bash(ls -la \"/c/Users/karim/Downloads\" 2>&1 | head -100)",
+      "Bash(mkdir -p \"/c/Users/karim/AppData/Local/Temp/claude/C--Users-karim-development-ardy/e4c952c0-8c23-42e7-a826-1b7aa549e3ba/scratchpad/design_export\")",
+      "Read(//c/Users/karim/AppData/Local/Temp/claude/C--Users-karim-development-ardy/e4c952c0-8c23-42e7-a826-1b7aa549e3ba/scratchpad/**)",
+      "Bash(unzip -o \"/c/Users/karim/Downloads/meBrowse app screens.zip\" -d .)",
+      "Bash(flutter --version)",
+      "Bash(find \"C:/Users/karim/development/ardy\" -type f -not -path \"*/\\\\.*\" -not -path \"*/build/*\")",
+      "Bash(ls -la \"C:/Users/karim/Downloads\" 2>/dev/null | head -50)",
+      "Bash(mkdir -p \"C:/Users/karim/AppData/Local/Temp/claude/C--Users-karim-development-ardy/51f7fa14-5ceb-4d02-8477-0c92f78ee71f/scratchpad/screens_ref\")",
+      "Bash(unzip -o -q \"C:/Users/karim/Downloads/meBrowse app screens.zip\" -d .)",
+      "Bash(flutter pub *)",
+      "Bash(flutter analyze *)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "ruflo"
+  ]
+}
