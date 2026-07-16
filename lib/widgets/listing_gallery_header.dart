@@ -5,7 +5,7 @@ import 'listing_photo.dart';
 
 /// Hero photo gallery on Listing Detail: back button + save toggle overlaid
 /// on the photo, with a page-dot indicator along the bottom edge.
-class ListingGalleryHeader extends StatelessWidget {
+class ListingGalleryHeader extends StatefulWidget {
   final bool isFavorite;
   final VoidCallback onBack;
   final VoidCallback onToggleFavorite;
@@ -20,8 +20,22 @@ class ListingGalleryHeader extends StatelessWidget {
   });
 
   @override
+  State<ListingGalleryHeader> createState() => _ListingGalleryHeaderState();
+}
+
+class _ListingGalleryHeaderState extends State<ListingGalleryHeader> {
+  final _pageController = PageController();
+  int _page = 0;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final photoCount = photoUrls.isEmpty ? 1 : photoUrls.length;
+    final photoCount = widget.photoUrls.isEmpty ? 1 : widget.photoUrls.length;
     return SizedBox(
       height: 280,
       child: Stack(
@@ -29,19 +43,26 @@ class ListingGalleryHeader extends StatelessWidget {
         children: [
           Container(
             color: AppColors.sandy,
-            child: ListingPhoto(photoUrls: photoUrls, iconSize: 48),
+            child: widget.photoUrls.length <= 1
+                ? ListingPhoto(photoUrls: widget.photoUrls, iconSize: 48)
+                : PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (index) => setState(() => _page = index),
+                    itemCount: widget.photoUrls.length,
+                    itemBuilder: (context, index) => ListingPhoto(photoUrls: [widget.photoUrls[index]], iconSize: 48),
+                  ),
           ),
           Positioned(
             top: 12,
             left: 14,
-            child: _CircleButton(icon: Icons.arrow_back_ios_new, onTap: onBack, iconColor: AppColors.ink, iconSize: 16),
+            child: _CircleButton(icon: Icons.arrow_back_ios_new, onTap: widget.onBack, iconColor: AppColors.ink, iconSize: 16),
           ),
           Positioned(
             top: 12,
             right: 14,
             child: _CircleButton(
-              icon: isFavorite ? Icons.favorite : Icons.favorite_border,
-              onTap: onToggleFavorite,
+              icon: widget.isFavorite ? Icons.favorite : Icons.favorite_border,
+              onTap: widget.onToggleFavorite,
               iconColor: AppColors.gold,
               iconSize: 18,
             ),
@@ -60,7 +81,7 @@ class ListingGalleryHeader extends StatelessWidget {
                   height: 6,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: index == 0 ? AppColors.gold : Colors.white.withValues(alpha: 0.55),
+                    color: index == _page ? AppColors.gold : Colors.white.withValues(alpha: 0.55),
                   ),
                 ),
               ),
