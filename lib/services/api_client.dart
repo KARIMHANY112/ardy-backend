@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:http/http.dart' as http;
 
 class ApiException implements Exception {
@@ -19,16 +19,16 @@ class ApiClient {
   String? token;
 
   // Override at build/run time with --dart-define=ARDY_API_BASE_URL=http://host:port
-  static const String _baseUrlOverride = String.fromEnvironment('ARDY_API_BASE_URL');
+  static const String _baseUrlOverride =
+      String.fromEnvironment('ARDY_API_BASE_URL');
+
+  static const String _productionUrl = 'https://ardy-backend.onrender.com';
 
   static String get baseUrl {
     if (_baseUrlOverride.isNotEmpty) return _baseUrlOverride;
+    if (kReleaseMode) return _productionUrl;
     if (kIsWeb) return 'http://localhost:8000';
-    try {
-      if (Platform.isAndroid) return 'http://10.0.2.2:8000';
-    } catch (_) {
-      // Platform is unavailable on some targets (e.g. web); already handled above.
-    }
+    if (!kIsWeb && Platform.isAndroid) return 'http://10.0.2.2:8000';
     return 'http://localhost:8000';
   }
 
