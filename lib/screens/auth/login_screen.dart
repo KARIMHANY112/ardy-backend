@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-import '../../models/user_role.dart';
+import '../../models/user.dart';
+import '../../services/api_client.dart';
+import '../../state/auth_session.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/ardi_logo_card.dart';
+import '../../widgets/labeled_input_field.dart';
+import '../../widgets/primary_button.dart';
 
+/// Log In — direction 1a: large logo lockup (dark card), right-aligned
+/// "Forgot password?".
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -12,9 +20,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  UserRole _role = UserRole.buyer;
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -23,64 +31,67 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _login() {
-    // Stub: no backend call yet — routes straight to the role's dashboard.
-    switch (_role) {
-      case UserRole.buyer:
-        context.go('/dashboard/buyer');
-      case UserRole.seller:
-        context.go('/dashboard/seller');
-      case UserRole.owner:
-        context.go('/dashboard/owner');
+  Future<void> _login() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter your email and password')));
+      return;
+    }
+
+    setState(() => _submitting = true);
+    try {
+      final session = context.read<AuthSession>();
+      await session.login(email, password);
+      if (!mounted) return;
+      context.go(session.user!.role == UserRole.owner ? '/dashboard/owner' : '/home');
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Something went wrong: $e')));
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          padding: const EdgeInsets.fromLTRB(22, 40, 22, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Image.asset('assets/green_logo.png', height: 96),
-              ),
-              const SizedBox(height: 24),
-              Text('Welcome back', style: textTheme.headlineMedium, textAlign: TextAlign.center),
-              const SizedBox(height: 24),
-              _RoleToggle(value: _role, onChanged: (role) => setState(() => _role = role)),
-              const SizedBox(height: 24),
-              TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Phone or email'),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Password'),
-              ),
+              const ArdiLogoCard(light: false),
+              const SizedBox(height: 20),
+              Text('Welcome back', textAlign: TextAlign.center, style: AppFonts.cairo(size: 24, weight: FontWeight.w700)),
+              const SizedBox(height: 20),
+              LabeledInputField(label: 'Phone or email', controller: _emailController),
+              const SizedBox(height: 12),
+              LabeledInputField(label: 'Password', controller: _passwordController, obscureText: true),
+              const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text('Forgot password?'),
+                child: GestureDetector(
+                  onTap: () {},
+                  child: Text('Forgot password?', style: AppFonts.tajawal(size: 12, weight: FontWeight.w600, color: AppColors.gold)),
                 ),
               ),
               const SizedBox(height: 8),
-              ElevatedButton(onPressed: _login, child: const Text('Log In')),
+              PrimaryButton(label: 'Log In', onPressed: _login, loading: _submitting),
               const SizedBox(height: 16),
               Center(
-                child: TextButton(
-                  onPressed: () => context.go('/signup'),
-                  child: const Text.rich(
+                child: GestureDetector(
+                  onTap: () => context.go('/signup'),
+                  child: Text.rich(
                     TextSpan(
                       text: 'New to ARDI? ',
-                      children: [TextSpan(text: 'Create account', style: TextStyle(fontWeight: FontWeight.w700))],
+                      style: AppFonts.tajawal(size: 12, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)),
+                      children: [TextSpan(text: 'Create account', style: AppFonts.tajawal(size: 12, weight: FontWeight.w700, color: AppColors.gold))],
                     ),
                   ),
                 ),
@@ -88,51 +99,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Buyer/Seller/Owner segmented toggle used on both Login and Sign Up.
-class _RoleToggle extends StatelessWidget {
-  final UserRole value;
-  final ValueChanged<UserRole> onChanged;
-
-  const _RoleToggle({required this.value, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.sandy,
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Row(
-        children: UserRole.values.map((role) {
-          final selected = role == value;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onChanged(role),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: selected ? AppColors.nileGreen : Colors.transparent,
-                  borderRadius: BorderRadius.circular(26),
-                ),
-                child: Text(
-                  role.label,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: selected ? Colors.white : AppColors.ink,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
       ),
     );
   }

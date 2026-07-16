@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-/// Quick-access card used on the role dashboards to route into the shared screens.
+/// Quick-access card used on the dashboards to route into the shared screens.
 class DashboardLinkCard extends StatelessWidget {
   final IconData icon;
   final String title;

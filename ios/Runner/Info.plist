@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ARDI needs access to your photos so you can attach listing photos when posting a listing.</string>
 </dict>
 </plist>

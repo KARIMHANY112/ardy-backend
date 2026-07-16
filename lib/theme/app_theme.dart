@@ -11,6 +11,29 @@ class AppColors {
   static const sandy = Color(0xFFF3F1EC);
   static const ink = Color(0xFF1C2B26);
   static const divider = Color(0xFFD8D3C8);
+
+  /// "Pending" license label color — not a brand token, lifted directly from the
+  /// design handoff's pending-badge text color (#8a6d00).
+  static const pendingAmber = Color(0xFF8A6D00);
+
+  static Color inkAlpha(double opacity) => ink.withValues(alpha: opacity);
+
+  static List<BoxShadow> get cardShadow => [
+        BoxShadow(color: deepGreen.withValues(alpha: 0.08), blurRadius: 16, offset: const Offset(0, 4)),
+      ];
+}
+
+/// Cairo (headings) / Tajawal (body/UI) text styles matching the design handoff's
+/// inline `font:` shorthands, exposed as one-off helpers for widgets that need a
+/// specific weight/size combo the theme's [TextTheme] doesn't cover.
+class AppFonts {
+  AppFonts._();
+
+  static TextStyle cairo({required double size, required FontWeight weight, Color color = AppColors.ink, double? height}) =>
+      GoogleFonts.cairo(fontSize: size, fontWeight: weight, color: color, height: height);
+
+  static TextStyle tajawal({required double size, required FontWeight weight, Color color = AppColors.ink, double? letterSpacing, double? height}) =>
+      GoogleFonts.tajawal(fontSize: size, fontWeight: weight, color: color, letterSpacing: letterSpacing, height: height);
 }
 
 class AppTheme {

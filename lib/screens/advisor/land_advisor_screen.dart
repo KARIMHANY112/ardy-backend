@@ -1,10 +1,17 @@
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'dart:convert';
 
-import '../../data/mock_listings.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../models/listing.dart';
-import '../../theme/app_theme.dart';
+import '../../services/advisor_repository.dart';
+import '../../services/api_client.dart';
 import '../../widgets/app_bottom_nav.dart';
+import '../../widgets/brand_header.dart';
+import '../../widgets/chat_bubble.dart';
+import '../../widgets/chat_input_bar.dart';
+import '../../widgets/comparison_card.dart';
 
 class _ChatMessage {
   final String text;
@@ -12,8 +19,22 @@ class _ChatMessage {
   final List<Listing> matches;
 
   _ChatMessage({required this.text, required this.fromUser, this.matches = const []});
+
+  Map<String, dynamic> toJson() => {
+        'text': text,
+        'fromUser': fromUser,
+        'matches': matches.map((m) => m.toJson()).toList(),
+      };
+
+  factory _ChatMessage.fromJson(Map<String, dynamic> json) => _ChatMessage(
+        text: json['text'] as String,
+        fromUser: json['fromUser'] as bool,
+        matches: (json['matches'] as List<dynamic>).map((m) => Listing.fromJson(m as Map<String, dynamic>)).toList(),
+      );
 }
 
+/// Land Advisor (AI chat) — direction 1a: rounded-14 bubbles on sand bg,
+/// inline comparison-card message type embedded in the chat thread.
 class LandAdvisorScreen extends StatefulWidget {
   const LandAdvisorScreen({super.key});
 
@@ -22,35 +43,90 @@ class LandAdvisorScreen extends StatefulWidget {
 }
 
 class _LandAdvisorScreenState extends State<LandAdvisorScreen> {
+  static const _conversationIdKey = 'advisor_conversation_id';
+  static const _messagesKey = 'advisor_messages';
+
+  static final _greeting = _ChatMessage(
+    text: "Tell me your budget and category — I'll compare licensed listings for you.",
+    fromUser: false,
+  );
+
   final _inputController = TextEditingController();
-  final List<_ChatMessage> _messages = [
-    _ChatMessage(
-      text: "Hi! I'm the Land Advisor. Tell me your budget, category, and preferred location and I'll suggest matching listings.",
-      fromUser: false,
-    ),
-  ];
+  final _scrollController = ScrollController();
+  final List<_ChatMessage> _messages = [_greeting];
+  String? _conversationId;
+  bool _sending = false;
 
-  void _send() {
+  @override
+  void initState() {
+    super.initState();
+    _restoreHistory();
+  }
+
+  Future<void> _restoreHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedMessages = prefs.getString(_messagesKey);
+    if (savedMessages == null) return;
+
+    final decoded = (jsonDecode(savedMessages) as List<dynamic>)
+        .map((m) => _ChatMessage.fromJson(m as Map<String, dynamic>))
+        .toList();
+    if (!mounted || decoded.isEmpty) return;
+
+    setState(() {
+      _messages
+        ..clear()
+        ..addAll(decoded);
+      _conversationId = prefs.getString(_conversationIdKey);
+    });
+    _scrollToEnd();
+  }
+
+  Future<void> _persistHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_messagesKey, jsonEncode(_messages.map((m) => m.toJson()).toList()));
+    if (_conversationId != null) await prefs.setString(_conversationIdKey, _conversationId!);
+  }
+
+  Future<void> _send() async {
     final text = _inputController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _sending) return;
 
-    // Stub: POST /advisor/ask isn't wired up yet — this canned reply just
-    // shows the comparison-card message type described in the design handoff.
-    final matches = mockListings.take(2).toList();
     setState(() {
       _messages.add(_ChatMessage(text: text, fromUser: true));
-      _messages.add(_ChatMessage(
-        text: "Based on that, here's what I'd compare first:",
-        fromUser: false,
-        matches: matches,
-      ));
       _inputController.clear();
+      _sending = true;
+    });
+    _scrollToEnd();
+
+    try {
+      final response = await context.read<AdvisorRepository>().ask(text, conversationId: _conversationId);
+      _conversationId = response.conversationId;
+      setState(() {
+        _messages.add(_ChatMessage(text: response.reply, fromUser: false, matches: response.matches));
+      });
+    } on ApiException catch (e) {
+      setState(() {
+        _messages.add(_ChatMessage(text: "Couldn't reach the Land Advisor: ${e.message}", fromUser: false));
+      });
+    } finally {
+      if (mounted) setState(() => _sending = false);
+      _scrollToEnd();
+      await _persistHistory();
+    }
+  }
+
+  void _scrollToEnd() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.animateTo(_scrollController.position.maxScrollExtent, duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
     });
   }
 
   @override
   void dispose() {
     _inputController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -58,134 +134,36 @@ class _LandAdvisorScreenState extends State<LandAdvisorScreen> {
   Widget build(BuildContext context) {
     return AppBottomNavScaffold(
       currentIndex: 2,
-      title: 'Land Advisor',
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const BrandHeader(title: 'Land Advisor', subtitle: 'AI assistant · compares listings for you', dark: true, titleSize: 18),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) => _MessageBubble(message: _messages[index]),
+            child: ListView.separated(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(18),
+              itemCount: _messages.length + (_sending ? 1 : 0),
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                if (index == _messages.length) {
+                  return const ChatBubble(text: 'Thinking…', fromUser: false);
+                }
+                final message = _messages[index];
+                if (message.matches.isEmpty) {
+                  return ChatBubble(text: message.text, fromUser: message.fromUser);
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ChatBubble(text: message.text, fromUser: message.fromUser),
+                    const SizedBox(height: 8),
+                    ComparisonCard(listings: message.matches),
+                  ],
+                );
+              },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _inputController,
-                    decoration: const InputDecoration(
-                      hintText: 'Describe what you\'re looking for...',
-                      isDense: true,
-                    ),
-                    onSubmitted: (_) => _send(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                CircleAvatar(
-                  backgroundColor: AppColors.nileGreen,
-                  child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white, size: 18),
-                    onPressed: _send,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MessageBubble extends StatelessWidget {
-  final _ChatMessage message;
-
-  const _MessageBubble({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final align = message.fromUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Column(
-        crossAxisAlignment: align,
-        children: [
-          Row(
-            mainAxisAlignment: message.fromUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (!message.fromUser) ...[
-                const CircleAvatar(radius: 14, backgroundColor: AppColors.nileGreen, child: Text('AI', style: TextStyle(color: Colors.white, fontSize: 10))),
-                const SizedBox(width: 8),
-              ],
-              Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: message.fromUser ? AppColors.nileGreen : Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: message.fromUser ? null : Border.all(color: AppColors.divider),
-                  ),
-                  child: Text(
-                    message.text,
-                    style: textTheme.bodyMedium?.copyWith(color: message.fromUser ? Colors.white : AppColors.ink),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (message.matches.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.divider),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Comparing ${message.matches.length} listings', style: textTheme.bodyMedium?.copyWith(fontSize: 12, color: AppColors.ink.withValues(alpha: 0.6))),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: message.matches
-                        .map((listing) => Expanded(
-                              child: GestureDetector(
-                                onTap: () => context.push('/listing/${listing.id}'),
-                                child: Container(
-                                  margin: const EdgeInsets.only(right: 8),
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.sandy,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        height: 50,
-                                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-                                        child: const Center(child: Icon(Icons.photo_outlined, size: 20, color: AppColors.divider)),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(listing.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: textTheme.bodyMedium?.copyWith(fontSize: 12, fontWeight: FontWeight.w600)),
-                                      Text('${listing.price.toStringAsFixed(0)} EGP', style: textTheme.bodyMedium?.copyWith(fontSize: 12, color: AppColors.gold)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ))
-                        .toList(),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ChatInputBar(controller: _inputController, onSend: _send),
         ],
       ),
     );

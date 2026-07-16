@@ -5,7 +5,7 @@ from jose import JWTError
 
 from app.core.database import get_db
 from app.core.security import decode_access_token
-from app.models.models import User, UserRole
+from app.models.models import User, UserRole, UserStatus
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 # Same scheme, but doesn't 401 when the Authorization header is missing — used by
@@ -57,7 +57,12 @@ def require_owner(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
-def require_seller(current_user: User = Depends(get_current_user)) -> User:
-    if current_user.role != UserRole.seller:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Seller access only")
+def require_buyer(current_user: User = Depends(get_current_user)) -> User:
+    """Guard for the regular (non-owner) user flows — browsing, favoriting, and
+    submitting listings. Buyers and sellers aren't distinct accounts: any buyer
+    can also list a property for sale."""
+    if current_user.role != UserRole.buyer:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Buyer access only")
+    if current_user.status != UserStatus.approved:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your account is pending owner approval")
     return current_user

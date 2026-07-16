@@ -1,34 +1,75 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
+import '../../models/buy_request.dart';
+import '../../models/listing.dart';
+import '../../models/user.dart';
+import '../../services/listings_repository.dart';
+import '../../state/auth_session.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/dashboard_link_card.dart';
 
-class BuyerDashboardScreen extends StatelessWidget {
+class BuyerDashboardScreen extends StatefulWidget {
   const BuyerDashboardScreen({super.key});
+
+  @override
+  State<BuyerDashboardScreen> createState() => _BuyerDashboardScreenState();
+}
+
+class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
+  late Future<List<Listing>> _myListingsFuture;
+  late Future<List<BuyRequest>> _myBuyRequestsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final repo = context.read<ListingsRepository>();
+    _myListingsFuture = repo.myRequests();
+    _myBuyRequestsFuture = repo.myBuyRequests();
+  }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final user = context.watch<AuthSession>().user;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Buyer Dashboard')),
+      appBar: AppBar(title: const Text('Dashboard')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text('Welcome back', style: textTheme.headlineMedium),
+            Text('Welcome back${user != null ? ', ${user.name}' : ''}', style: textTheme.headlineMedium),
             const SizedBox(height: 4),
             Text(
-              'Browse listings, chat with the Land Advisor, or check your saved properties.',
+              'Browse listings, chat with the Land Advisor, or post one of your own.',
               style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)),
             ),
+            if (user?.status == AccountStatus.pending) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(12)),
+                child: Text(
+                  'Your account is pending owner approval — you can browse and favorite, but posting a listing is locked until then.',
+                  style: textTheme.bodyMedium?.copyWith(fontSize: 12, color: AppColors.ink.withValues(alpha: 0.7)),
+                ),
+              ),
+            ],
             const SizedBox(height: 20),
             DashboardLinkCard(
               icon: Icons.home_outlined,
               title: 'Browse Listings',
               subtitle: 'Search factories, land, and shops',
               onTap: () => context.go('/home'),
+            ),
+            const SizedBox(height: 12),
+            DashboardLinkCard(
+              icon: Icons.add_box_outlined,
+              title: 'Post New Listing',
+              subtitle: 'Submit a listing for owner review',
+              onTap: () => context.go('/post-listing'),
             ),
             const SizedBox(height: 12),
             DashboardLinkCard(
@@ -51,9 +92,122 @@ class BuyerDashboardScreen extends StatelessWidget {
               subtitle: 'Account settings',
               onTap: () => context.go('/profile'),
             ),
+            const SizedBox(height: 20),
+            Text('My Listings', style: textTheme.titleLarge),
+            const SizedBox(height: 12),
+            FutureBuilder<List<Listing>>(
+              future: _myListingsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Center(child: CircularProgressIndicator()));
+                }
+                if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Text(
+                    'No listings submitted yet',
+                    style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)),
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final listing in snapshot.data!)
+                      Card(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: ListTile(
+                          leading: const CircleAvatar(backgroundColor: AppColors.sandy, child: Icon(Icons.photo_outlined, color: AppColors.divider)),
+                          title: Text(listing.title),
+                          subtitle: Text('${listing.category.label} · ${listing.location}'),
+                          trailing: _StatusPill(status: listing.status),
+                          onTap: listing.status == ListingStatus.live
+                              ? () => context.push('/listing/${listing.id}')
+                              : () => ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('${listing.title} is still ${listing.status.label.toLowerCase()}')),
+                                  ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+            Text('My Buy Requests', style: textTheme.titleLarge),
+            const SizedBox(height: 12),
+            FutureBuilder<List<BuyRequest>>(
+              future: _myBuyRequestsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Center(child: CircularProgressIndicator()));
+                }
+                if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Text(
+                    'No buy requests yet',
+                    style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)),
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final request in snapshot.data!)
+                      Card(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: ListTile(
+                          leading: const CircleAvatar(backgroundColor: AppColors.sandy, child: Icon(Icons.request_quote_outlined, color: AppColors.divider)),
+                          title: Text(request.listing.title),
+                          subtitle: Text('${request.listing.category.label} · ${request.listing.location}'),
+                          trailing: _BuyRequestStatusPill(status: request.status),
+                          onTap: request.listing.status == ListingStatus.live
+                              ? () => context.push('/listing/${request.listing.id}')
+                              : () => ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('${request.listing.title} is ${request.listing.status.label.toLowerCase()}')),
+                                  ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  final ListingStatus status;
+
+  const _StatusPill({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (status) {
+      ListingStatus.live => AppColors.nileGreen,
+      ListingStatus.pending => AppColors.gold,
+      ListingStatus.rejected => Colors.redAccent,
+      ListingStatus.sold => AppColors.ink,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(20)),
+      child: Text(status.label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12, color: color)),
+    );
+  }
+}
+
+class _BuyRequestStatusPill extends StatelessWidget {
+  final BuyRequestStatus status;
+
+  const _BuyRequestStatusPill({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (status) {
+      BuyRequestStatus.pending => AppColors.gold,
+      BuyRequestStatus.approved => AppColors.nileGreen,
+      BuyRequestStatus.rejected => Colors.redAccent,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(20)),
+      child: Text(status.label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12, color: color)),
     );
   }
 }

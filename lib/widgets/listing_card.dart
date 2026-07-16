@@ -2,84 +2,70 @@ import 'package:flutter/material.dart';
 
 import '../models/listing.dart';
 import '../theme/app_theme.dart';
+import '../utils/formatters.dart';
+import 'listing_photo.dart';
+import 'tag_badge.dart';
 
+/// The vertical listing card used in the Home Feed list.
 class ListingCard extends StatelessWidget {
   final Listing listing;
   final VoidCallback onTap;
-  final VoidCallback? onFavoriteToggle;
 
-  const ListingCard({super.key, required this.listing, required this.onTap, this.onFavoriteToggle});
+  const ListingCard({super.key, required this.listing, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: AppColors.cardShadow,
+        ),
+        clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Stack(
-              children: [
-                Container(
-                  height: 150,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppColors.sandy,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-                    border: Border.all(color: AppColors.divider),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.photo_outlined, size: 36, color: AppColors.divider),
-                  ),
-                ),
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: GestureDetector(
-                    onTap: onFavoriteToggle,
-                    child: CircleAvatar(
-                      radius: 16,
-                      backgroundColor: Colors.white,
-                      child: Icon(
-                        listing.isFavorite ? Icons.favorite : Icons.favorite_border,
-                        size: 18,
-                        color: AppColors.gold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            Container(
+              height: 150,
+              width: double.infinity,
+              color: AppColors.sandy,
+              child: ListingPhoto(photoUrls: listing.photoUrls, iconSize: 36),
             ),
             Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(listing.title, style: textTheme.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 6),
                   Text(
-                    '${listing.category.label} · ${listing.sizeSqm.toStringAsFixed(0)} sqm · ${listing.location}',
-                    style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)),
+                    listing.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.cairo(size: 15, weight: FontWeight.w700),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '${listing.price.toStringAsFixed(0)} EGP',
-                        style: textTheme.titleMedium?.copyWith(color: AppColors.gold, fontWeight: FontWeight.w700),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.sandy,
-                          borderRadius: BorderRadius.circular(20),
+                      Text(formatEgp(listing.price), style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: AppColors.gold)),
+                      Text(formatSqm(listing.sizeSqm), style: AppFonts.tajawal(size: 12, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6))),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          listing.location,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppFonts.tajawal(size: 12, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)),
                         ),
-                        child: Text(listing.license.label, style: textTheme.bodyMedium?.copyWith(fontSize: 12)),
                       ),
+                      const SizedBox(width: 8),
+                      TagBadge.license(listing.license),
                     ],
                   ),
                 ],

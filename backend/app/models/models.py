@@ -10,14 +10,26 @@ from app.core.database import Base
 
 
 class UserRole(str, enum.Enum):
-    buyer = "buyer"
-    seller = "seller"
+    buyer = "buyer"  # regular user — can browse/favorite listings and submit their own
     owner = "owner"  # the single app owner/admin
+
+
+class UserStatus(str, enum.Enum):
+    pending = "pending"    # signed up, awaiting owner review
+    approved = "approved"  # can log in and use the app
+    rejected = "rejected"  # signup denied
 
 
 class ListingStatus(str, enum.Enum):
     pending = "pending"   # seller submitted, awaiting owner review
     live = "live"         # approved, visible to buyers
+    rejected = "rejected"
+    sold = "sold"         # deal closed (arranged by phone), no longer live
+
+
+class BuyRequestStatus(str, enum.Enum):
+    pending = "pending"    # buyer expressed interest, awaiting owner review
+    approved = "approved"  # owner will follow up by phone to close the deal
     rejected = "rejected"
 
 
@@ -32,6 +44,12 @@ class User(Base):
     role = Column(Enum(UserRole), nullable=False, default=UserRole.buyer)
     fcm_token = Column(String, nullable=True)  # registered by the client for push notifications
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # New signups start pending; existing rows are backfilled to approved by the migration
+    # so current accounts aren't locked out.
+    status = Column(Enum(UserStatus), nullable=False, default=UserStatus.pending, server_default=UserStatus.approved.value)
+    reviewed_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
 
     listings = relationship("Listing", back_populates="submitted_by_user", foreign_keys="Listing.submitted_by")
     favorites = relationship("Favorite", back_populates="user")
@@ -53,7 +71,19 @@ class Listing(Base):
     location = Column(String, nullable=False)
     description = Column(String, nullable=True)
 
+    # Precise map pin, set when the submitter drops one in the app. Nullable —
+    # older listings and free-text-only submissions won't have one.
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+
     status = Column(Enum(ListingStatus), nullable=False, default=ListingStatus.pending)
+
+    # Set when the owner marks the listing sold — the deal itself is arranged by phone,
+    # so these are just the record of what was agreed.
+    sold_price = Column(Float, nullable=True)
+    sold_to_name = Column(String, nullable=True)
+    sold_to_phone = Column(String, nullable=True)
+    sold_at = Column(DateTime(timezone=True), nullable=True)
 
     photo_urls = Column(ARRAY(String), nullable=False, default=list, server_default="{}")
 
@@ -66,6 +96,14 @@ class Listing(Base):
 
     submitted_by_user = relationship("User", back_populates="listings", foreign_keys=[submitted_by])
     favorited_by = relationship("Favorite", back_populates="listing")
+
+    @property
+    def submitted_by_name(self) -> str:
+        return self.submitted_by_user.name
+
+    @property
+    def submitted_by_phone(self) -> str:
+        return self.submitted_by_user.phone
 
 
 class MessageRole(str, enum.Enum):
@@ -119,3 +157,29 @@ class Favorite(Base):
 
     user = relationship("User", back_populates="favorites")
     listing = relationship("Listing", back_populates="favorited_by")
+
+
+class BuyRequest(Base):
+    """A buyer expressing interest in a listing — the owner follows up and
+    closes the deal by phone/WhatsApp (see Listing.status == sold)."""
+    __tablename__ = "buy_requests"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    listing_id = Column(UUID(as_uuid=True), ForeignKey("listings.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    status = Column(Enum(BuyRequestStatus), nullable=False, default=BuyRequestStatus.pending, server_default=BuyRequestStatus.pending.value)
+    reviewed_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+
+    user = relationship("User", foreign_keys=[user_id])
+    listing = relationship("Listing")
+
+    @property
+    def buyer_name(self) -> str:
+        return self.user.name
+
+    @property
+    def buyer_phone(self) -> str:
+        return self.user.phone

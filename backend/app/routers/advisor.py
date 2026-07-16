@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from openai import OpenAI
 
-from app.core.database import get_db
+from app.core.database import SessionLocal, get_db
 from app.core.config import settings
 from app.core.deps import get_optional_user
 from app.core.preferences import (
@@ -46,15 +46,23 @@ def build_listing_text(listing: Listing) -> str:
     )
 
 
-def embed_and_store_listing(listing: Listing, db: Session) -> None:
+def embed_and_store_listing(listing_id) -> None:
     """Runs as a background task after a listing is approved (see listings.py review_listing).
+    Opens its own session and refetches the listing rather than reusing the request-scoped
+    `db`/`listing`, which may already be torn down by the time this actually runs.
     Swallow-and-log: a failed embedding shouldn't crash anything since it already went live —
     it just won't show up for the Land Advisor until retried."""
+    db = SessionLocal()
     try:
+        listing = db.query(Listing).filter(Listing.id == listing_id).first()
+        if listing is None:
+            return
         listing.embedding = embed_text(build_listing_text(listing))
         db.commit()
     except Exception:
-        logger.exception("Failed to embed listing %s for the Land Advisor", listing.id)
+        logger.exception("Failed to embed listing %s for the Land Advisor", listing_id)
+    finally:
+        db.close()
 
 
 def _preference_filters(prefs: dict) -> list:

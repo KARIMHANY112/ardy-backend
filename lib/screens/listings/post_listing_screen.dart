@@ -1,9 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 
 import '../../models/listing.dart';
+import '../../services/api_client.dart';
+import '../../services/listings_repository.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_bottom_nav.dart';
+import '../../widgets/brand_header.dart';
+import '../../widgets/category_pill.dart';
+import '../../widgets/labeled_input_field.dart';
+import '../../widgets/photo_upload_slot.dart';
+import '../../widgets/primary_button.dart';
+import 'pick_location_screen.dart';
 
+/// Post Listing (seller form) — direction 1a: nile-green pill selectors,
+/// sand-bg inputs, nile "Publish Listing" button. Single page, no wizard.
 class PostListingScreen extends StatefulWidget {
   const PostListingScreen({super.key});
 
@@ -12,12 +25,22 @@ class PostListingScreen extends StatefulWidget {
 }
 
 class _PostListingScreenState extends State<PostListingScreen> {
-  ListingCategory _category = ListingCategory.land;
-  LicenseStatus _license = LicenseStatus.pending;
+  ListingCategory _category = ListingCategory.factory;
+  LicenseStatus _license = LicenseStatus.licensed;
   final _titleController = TextEditingController();
   final _priceController = TextEditingController();
   final _areaController = TextEditingController();
   final _locationController = TextEditingController();
+  final List<XFile?> _photos = [null, null, null];
+  LatLng? _pickedLocation;
+  bool _submitting = false;
+
+  Future<void> _pickLocation() async {
+    final result = await Navigator.of(context).push<LatLng>(
+      MaterialPageRoute(builder: (_) => PickLocationScreen(initial: _pickedLocation)),
+    );
+    if (result != null) setState(() => _pickedLocation = result);
+  }
 
   @override
   void dispose() {
@@ -28,101 +51,178 @@ class _PostListingScreenState extends State<PostListingScreen> {
     super.dispose();
   }
 
-  void _publish() {
-    // Stub: POST /listings isn't wired up yet.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Listing submitted for review (not wired up yet)')),
-    );
+  Future<void> _publish() async {
+    final title = _titleController.text.trim();
+    final price = double.tryParse(_priceController.text.trim());
+    final area = double.tryParse(_areaController.text.trim());
+    final location = _locationController.text.trim();
+
+    if (title.isEmpty || price == null || area == null || location.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fill in title, price, area, and location')));
+      return;
+    }
+
+    setState(() => _submitting = true);
+    try {
+      final repo = context.read<ListingsRepository>();
+      final listing = await repo.create(
+        title: title,
+        category: _category,
+        price: price,
+        size: area,
+        location: location,
+        latitude: _pickedLocation?.latitude,
+        longitude: _pickedLocation?.longitude,
+      );
+
+      for (final photo in _photos.whereType<XFile>()) {
+        final bytes = await photo.readAsBytes();
+        await repo.uploadPhoto(listing.id, bytes: bytes, filename: photo.name);
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Listing submitted for review')),
+      );
+      setState(() {
+        _titleController.clear();
+        _priceController.clear();
+        _areaController.clear();
+        _locationController.clear();
+        _photos.setAll(0, [null, null, null]);
+        _pickedLocation = null;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     return AppBottomNavScaffold(
-      currentIndex: 3,
-      title: 'Post Listing',
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Category', style: textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: ListingCategory.values
-                  .map((category) => ChoiceChip(
-                        label: Text(category.label),
-                        selected: _category == category,
-                        selectedColor: AppColors.nileGreen,
-                        labelStyle: TextStyle(color: _category == category ? Colors.white : AppColors.ink),
-                        onSelected: (_) => setState(() => _category = category),
-                      ))
-                  .toList(),
-            ),
-            const SizedBox(height: 16),
-            TextField(controller: _titleController, decoration: const InputDecoration(labelText: 'Title')),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _priceController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Price (EGP)'),
+      currentIndex: -1, // no longer a bottom-nav tab; reached via the buyer dashboard card
+      backgroundColor: Colors.white,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const BrandHeader(title: 'Post a Listing', subtitle: 'Reach verified commercial buyers'),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Category', style: AppFonts.tajawal(size: 12, weight: FontWeight.w600, color: AppColors.inkAlpha(0.6))),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      for (final category in ListingCategory.values)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: CategoryPill(label: category.label, selected: _category == category, onTap: () => setState(() => _category = category)),
+                        ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _areaController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Area (sqm)'),
+                  const SizedBox(height: 14),
+                  LabeledInputField(label: 'Title', controller: _titleController, hint: 'e.g. Industrial Unit, 10th of Ramadan'),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: LabeledInputField(
+                          label: 'Price',
+                          controller: _priceController,
+                          keyboardType: TextInputType.number,
+                          suffixText: 'EGP',
+                          hint: '0',
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: LabeledInputField(
+                          label: 'Area',
+                          controller: _areaController,
+                          keyboardType: TextInputType.number,
+                          suffixText: 'sqm',
+                          hint: '0',
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            TextField(controller: _locationController, decoration: const InputDecoration(labelText: 'Location')),
-            const SizedBox(height: 16),
-            Text('Licensing Status', style: textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: LicenseStatus.values
-                  .map((status) => ChoiceChip(
-                        label: Text(status.label),
-                        selected: _license == status,
-                        selectedColor: AppColors.nileGreen,
-                        labelStyle: TextStyle(color: _license == status ? Colors.white : AppColors.ink),
-                        onSelected: (_) => setState(() => _license = status),
-                      ))
-                  .toList(),
-            ),
-            const SizedBox(height: 16),
-            Text('Photos', style: textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Row(
-              children: List.generate(
-                3,
-                (index) => Container(
-                  margin: const EdgeInsets.only(right: 10),
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: AppColors.sandy,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.divider),
+                  const SizedBox(height: 14),
+                  LabeledInputField(label: 'Location', controller: _locationController, hint: 'City, area'),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: _pickLocation,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.sandy,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.divider),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _pickedLocation == null ? Icons.add_location_alt_outlined : Icons.check_circle,
+                            color: _pickedLocation == null ? AppColors.inkAlpha(0.6) : AppColors.nileGreen,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _pickedLocation == null
+                                  ? 'Add map pin (optional)'
+                                  : 'Pin set — ${_pickedLocation!.latitude.toStringAsFixed(5)}, ${_pickedLocation!.longitude.toStringAsFixed(5)}',
+                              style: AppFonts.tajawal(size: 13, weight: FontWeight.w600, color: AppColors.ink),
+                            ),
+                          ),
+                          Text(
+                            _pickedLocation == null ? 'Pick' : 'Change',
+                            style: AppFonts.tajawal(size: 12, weight: FontWeight.w700, color: AppColors.gold),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  child: const Icon(Icons.add_a_photo_outlined, color: AppColors.divider),
-                ),
+                  const SizedBox(height: 14),
+                  Text('Licensing status', style: AppFonts.tajawal(size: 12, weight: FontWeight.w600, color: AppColors.inkAlpha(0.6))),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      for (final status in LicenseStatus.values)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: CategoryPill(label: status.label, selected: _license == status, onTap: () => setState(() => _license = status)),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Text('Photos', style: AppFonts.tajawal(size: 12, weight: FontWeight.w600, color: AppColors.inkAlpha(0.6))),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      for (var i = 0; i < _photos.length; i++)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 10),
+                          child: PhotoUploadSlot(
+                            image: _photos[i],
+                            onPicked: (file) => setState(() => _photos[i] = file),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  PrimaryButton(label: 'Publish Listing', onPressed: _publish, loading: _submitting),
+                  const SizedBox(height: 12),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton(onPressed: _publish, child: const Text('Publish Listing')),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

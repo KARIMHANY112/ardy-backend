@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr
 
-from app.models.models import UserRole, ListingStatus
+from app.models.models import UserRole, UserStatus, ListingStatus, BuyRequestStatus
 
 
 # ---- Auth ----
@@ -14,12 +14,8 @@ class UserCreate(BaseModel):
     phone: str
     email: EmailStr
     password: str
-    role: UserRole  # buyer or seller — owner accounts are created manually, not via signup
-
-
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
+    # No role field — every signup is a buyer (who can also list). Owner accounts
+    # are created manually, not via signup.
 
 
 class UserOut(BaseModel):
@@ -28,6 +24,7 @@ class UserOut(BaseModel):
     phone: str
     email: EmailStr
     role: UserRole
+    status: UserStatus
 
     class Config:
         from_attributes = True
@@ -43,6 +40,10 @@ class FcmTokenUpdate(BaseModel):
     fcm_token: str
 
 
+class UserReviewAction(BaseModel):
+    approve: bool  # true = approve, false = reject — mirrors ListingReviewAction
+
+
 # ---- Listings ----
 
 class ListingCreate(BaseModel):
@@ -52,6 +53,8 @@ class ListingCreate(BaseModel):
     size: float
     location: str
     description: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class ListingOut(BaseModel):
@@ -66,6 +69,12 @@ class ListingOut(BaseModel):
     status: ListingStatus
     photo_urls: list[str]
     created_at: datetime
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    sold_price: Optional[float] = None
+    sold_to_name: Optional[str] = None
+    sold_to_phone: Optional[str] = None
+    sold_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -73,6 +82,19 @@ class ListingOut(BaseModel):
 
 class ListingReviewAction(BaseModel):
     approve: bool  # true = approve, false = reject — simple toggle, no reason field
+
+
+class ListingSoldAction(BaseModel):
+    sold_price: float
+    sold_to_name: str
+    sold_to_phone: str
+
+
+class ListingDashboardOut(ListingOut):
+    """ListingOut plus the seller's contact info — owner-dashboard endpoints only.
+    Never used for the public browse/get endpoints, which stay seller-anonymous."""
+    submitted_by_name: str
+    submitted_by_phone: str
 
 
 # ---- Favorites ----
@@ -84,6 +106,35 @@ class FavoriteOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ---- Buy requests ----
+
+class BuyRequestOut(BaseModel):
+    id: uuid.UUID
+    listing: ListingOut
+    status: BuyRequestStatus
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class BuyRequestDashboardOut(BaseModel):
+    """BuyRequestOut plus the buyer's contact info — owner-dashboard endpoint only."""
+    id: uuid.UUID
+    listing: ListingDashboardOut
+    buyer_name: str
+    buyer_phone: str
+    status: BuyRequestStatus
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class BuyRequestReviewAction(BaseModel):
+    approve: bool  # true = approve, false = reject — mirrors ListingReviewAction
 
 
 # ---- Land Advisor ----
