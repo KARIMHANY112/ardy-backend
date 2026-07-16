@@ -1,13 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.config import settings
 from app.routers import auth, listings, favorites, advisor, users
 
 app = FastAPI(title="Ardy API", version="0.1.0")
 
+_origins = ["https://ardy-dashboard.onrender.com"]
+if settings.environment != "production":
+    _origins.append("http://localhost:5000")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten this to the dashboard's actual origin before going live
+    allow_origins=_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

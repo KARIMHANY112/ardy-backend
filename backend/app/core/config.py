@@ -2,6 +2,9 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    # Environment — "production" locks CORS to the deployed dashboard origin only.
+    environment: str = "development"
+
     # Database
     database_url: str = "postgresql://ardy:ardy@localhost:5432/ardy"
 
