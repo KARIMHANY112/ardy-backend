@@ -1,6 +1,8 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/api_client.dart';
 import '../../state/auth_session.dart';
@@ -26,12 +28,21 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  late final _termsTap = TapGestureRecognizer()..onTap = () => _openLegal('terms');
+  late final _privacyTap = TapGestureRecognizer()..onTap = () => _openLegal('privacy');
+
+  Future<void> _openLegal(String doc) async {
+    await launchUrl(Uri.parse('${ApiClient.baseUrl}/legal/$doc'), mode: LaunchMode.externalApplication);
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _termsTap.dispose();
+    _privacyTap.dispose();
     super.dispose();
   }
 
@@ -100,14 +111,16 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 12),
               LabeledInputField(label: 'Password', controller: _passwordController, obscureText: true),
               const SizedBox(height: 14),
-              GestureDetector(
-                onTap: () => setState(() => _acceptedTerms = !_acceptedTerms),
-                behavior: HitTestBehavior.opaque,
-                child: Row(
-                  children: [
-                    Container(
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GestureDetector(
+                    onTap: () => setState(() => _acceptedTerms = !_acceptedTerms),
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
                       width: 16,
                       height: 16,
+                      margin: const EdgeInsets.only(top: 1),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(4),
                         border: _acceptedTerms ? null : Border.all(color: AppColors.divider, width: 1.5),
@@ -115,12 +128,30 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                       child: _acceptedTerms ? const Icon(Icons.check, size: 12, color: Colors.white) : null,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text('I agree to the Terms & Privacy Policy', style: AppFonts.tajawal(size: 11, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6))),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text.rich(
+                      TextSpan(
+                        style: AppFonts.tajawal(size: 11, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)),
+                        children: [
+                          const TextSpan(text: 'I agree to the '),
+                          TextSpan(
+                            text: 'Terms',
+                            style: AppFonts.tajawal(size: 11, weight: FontWeight.w700, color: AppColors.gold),
+                            recognizer: _termsTap,
+                          ),
+                          const TextSpan(text: ' & '),
+                          TextSpan(
+                            text: 'Privacy Policy',
+                            style: AppFonts.tajawal(size: 11, weight: FontWeight.w700, color: AppColors.gold),
+                            recognizer: _privacyTap,
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               const SizedBox(height: 14),
               PrimaryButton(label: 'Sign Up', onPressed: _signUp, loading: _submitting),
