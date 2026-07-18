@@ -6,6 +6,7 @@ import 'routes/app_router.dart';
 import 'services/advisor_repository.dart';
 import 'services/favorites_repository.dart';
 import 'services/listings_repository.dart';
+import 'state/advisor_chat_session.dart';
 import 'state/auth_session.dart';
 import 'theme/app_theme.dart';
 
@@ -47,6 +48,7 @@ class _MyAppState extends State<MyApp> {
         Provider(create: (_) => ListingsRepository(_session.api)),
         Provider(create: (_) => FavoritesRepository(_session.api)),
         Provider(create: (_) => AdvisorRepository(_session.api)),
+        ChangeNotifierProvider(create: (_) => AdvisorChatSession()),
       ],
       child: MaterialApp.router(
         title: 'ARDI',
