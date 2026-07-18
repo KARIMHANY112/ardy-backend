@@ -1,4 +1,4 @@
-package com.example.ardy
+package com.ardy.app
 
 import io.flutter.embedding.android.FlutterActivity
 
