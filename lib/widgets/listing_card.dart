@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/listing.dart';
 import '../theme/app_theme.dart';
+import '../theme/app_dimens.dart';
 import '../utils/formatters.dart';
 import 'listing_photo.dart';
 import 'tag_badge.dart';
@@ -20,7 +21,7 @@ class ListingCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppRadii.r18),
           boxShadow: AppColors.cardShadow,
         ),
         clipBehavior: Clip.antiAlias,
@@ -34,7 +35,7 @@ class ListingCard extends StatelessWidget {
               child: ListingPhoto(photoUrls: listing.photoUrls, iconSize: 36),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s14, vertical: AppSpacing.s12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -44,7 +45,7 @@ class ListingCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: AppFonts.cairo(size: 15, weight: FontWeight.w700),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.s6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -52,7 +53,7 @@ class ListingCard extends StatelessWidget {
                       Text(formatSqm(listing.sizeSqm), style: AppFonts.tajawal(size: 12, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6))),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.s4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -64,7 +65,7 @@ class ListingCard extends StatelessWidget {
                           style: AppFonts.tajawal(size: 12, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.s8),
                       TagBadge.license(listing.license),
                     ],
                   ),

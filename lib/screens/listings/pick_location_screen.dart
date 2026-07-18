@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../theme/app_theme.dart';
+import '../../theme/app_dimens.dart';
 
 /// Full-screen map picker — tap anywhere to drop a pin, then confirm.
 /// Pushed with Navigator (not go_router) since it's a transient modal step,
@@ -50,7 +51,7 @@ class _PickLocationScreenState extends State<PickLocationScreen> {
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.s12),
           child: Text(
             'Tap anywhere on the map to drop the pin, then tap Confirm',
             textAlign: TextAlign.center,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/app_dimens.dart';
 
 /// The large logo lockup card shown at the top of Sign Up / Log In.
 ///
@@ -22,10 +23,10 @@ class ArdiLogoCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 28),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.s28),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadii.r14),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 6))],
       ),
       child: Column(
@@ -36,7 +37,7 @@ class ArdiLogoCard extends StatelessWidget {
             textDirection: TextDirection.rtl,
             style: AppFonts.cairo(size: 34, weight: FontWeight.w800, color: wordmarkColor, height: 1),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.s6),
           Text(
             'A R D I',
             style: AppFonts.tajawal(size: 13, weight: FontWeight.w600, color: AppColors.gold, letterSpacing: 4),

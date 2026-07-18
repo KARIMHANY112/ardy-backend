@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/app_dimens.dart';
 
 /// The pill search bar in the Home Feed header.
 class ArdiSearchField extends StatelessWidget {
@@ -14,7 +15,7 @@ class ArdiSearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 44,
-      decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(AppRadii.r14)),
       child: TextField(
         controller: controller,
         onChanged: onChanged,
@@ -26,10 +27,10 @@ class ArdiSearchField extends StatelessWidget {
           filled: true,
           fillColor: Colors.transparent,
           isDense: true,
-          contentPadding: const EdgeInsets.symmetric(vertical: 12),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+          contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.s12),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.r14), borderSide: BorderSide.none),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.r14), borderSide: BorderSide.none),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.r14), borderSide: BorderSide.none),
         ),
       ),
     );

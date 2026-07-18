@@ -6,6 +6,7 @@ import '../../models/listing.dart';
 import '../../services/api_client.dart';
 import '../../services/favorites_repository.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/app_dimens.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/brand_header.dart';
 import '../../widgets/category_pill.dart';
@@ -61,12 +62,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         children: [
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.s18, AppSpacing.s16, AppSpacing.s18, AppSpacing.s14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const BrandHeader(title: 'Favorites', titleSize: 22),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.s12),
                 SizedBox(
                   height: 32,
                   child: ListView(
@@ -75,7 +76,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       CategoryPill(label: 'All', selected: _selectedCategory == null, onTap: () => setState(() => _selectedCategory = null)),
                       for (final category in ListingCategory.values)
                         Padding(
-                          padding: const EdgeInsets.only(left: 8),
+                          padding: const EdgeInsets.only(left: AppSpacing.s8),
                           child: CategoryPill(
                             label: _filterLabels[category]!,
                             selected: _selectedCategory == category,
@@ -105,7 +106,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   return Center(child: Text('No saved listings yet', style: AppFonts.tajawal(size: 14, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6))));
                 }
                 return GridView.builder(
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.all(AppSpacing.s18),
                   itemCount: favorites.length,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,

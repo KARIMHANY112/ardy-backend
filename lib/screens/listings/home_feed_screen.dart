@@ -7,6 +7,7 @@ import '../../models/listing.dart';
 import '../../services/api_client.dart';
 import '../../services/listings_repository.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/app_dimens.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/ardi_wordmark.dart';
 import '../../widgets/category_pill.dart';
@@ -82,7 +83,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         children: [
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.s18, AppSpacing.s16, AppSpacing.s18, AppSpacing.s14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -101,13 +102,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.s12),
                 ArdiSearchField(
                   controller: _searchController,
                   hint: 'Search factories, land, shops…',
                   onChanged: (value) => setState(() => _query = value),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.s12),
                 SizedBox(
                   height: 32,
                   child: ListView(
@@ -116,7 +117,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       CategoryPill(label: 'All', selected: _selectedCategory == null, onTap: () => setState(() => _selectedCategory = null)),
                       for (final category in ListingCategory.values)
                         Padding(
-                          padding: const EdgeInsets.only(left: 8),
+                          padding: const EdgeInsets.only(left: AppSpacing.s8),
                           child: CategoryPill(
                             label: _filterLabels[category]!,
                             selected: _selectedCategory == category,
@@ -143,7 +144,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(message, style: AppFonts.tajawal(size: 14, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6))),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.s8),
                         TextButton(onPressed: _refresh, child: const Text('Retry')),
                       ],
                     ),
@@ -157,15 +158,15 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       ? ListView(
                           children: [
                             Padding(
-                              padding: const EdgeInsets.only(top: 80),
+                              padding: const EdgeInsets.only(top: AppSpacing.s80),
                               child: Center(child: Text('No listings match', style: AppFonts.tajawal(size: 14, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)))),
                             ),
                           ],
                         )
                       : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(18, 16, 18, 6),
+                          padding: const EdgeInsets.fromLTRB(AppSpacing.s18, AppSpacing.s16, AppSpacing.s18, AppSpacing.s6),
                           itemCount: listings.length,
-                          separatorBuilder: (_, _) => const SizedBox(height: 14),
+                          separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.s14),
                           itemBuilder: (context, index) {
                             final listing = listings[index];
                             return ListingCard(listing: listing, onTap: () => context.push('/listing/${listing.id}'));

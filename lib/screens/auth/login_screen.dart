@@ -6,6 +6,7 @@ import '../../models/user.dart';
 import '../../services/api_client.dart';
 import '../../state/auth_session.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/app_dimens.dart';
 import '../../widgets/ardi_logo_card.dart';
 import '../../widgets/labeled_input_field.dart';
 import '../../widgets/primary_button.dart';
@@ -62,18 +63,18 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(22, 40, 22, 24),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.s22, AppSpacing.s40, AppSpacing.s22, AppSpacing.s24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const ArdiLogoCard(light: false),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.s20),
               Text('Welcome back', textAlign: TextAlign.center, style: AppFonts.cairo(size: 24, weight: FontWeight.w700)),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.s20),
               LabeledInputField(label: 'Phone or email', controller: _emailController),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.s12),
               LabeledInputField(label: 'Password', controller: _passwordController, obscureText: true),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.s8),
               Align(
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
@@ -81,9 +82,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Text('Forgot password?', style: AppFonts.tajawal(size: 12, weight: FontWeight.w600, color: AppColors.gold)),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.s8),
               PrimaryButton(label: 'Log In', onPressed: _login, loading: _submitting),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.s16),
               Center(
                 child: GestureDetector(
                   onTap: () => context.go('/signup'),

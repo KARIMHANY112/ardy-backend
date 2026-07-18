@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/listing.dart';
 import '../theme/app_theme.dart';
+import '../theme/app_dimens.dart';
 
 /// Small sandy-bg pill tag. Used both as the category tag on Listing Detail
 /// ("FACTORY") and as the license-status badge on listing cards.
@@ -25,8 +26,8 @@ class TagBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(6)),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s8, vertical: AppSpacing.s3),
+      decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(AppRadii.r6)),
       child: Text(text, style: AppFonts.tajawal(size: 10, weight: FontWeight.w600, color: color)),
     );
   }

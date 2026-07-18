@@ -9,6 +9,7 @@ import '../../services/api_client.dart';
 import '../../services/favorites_repository.dart';
 import '../../services/listings_repository.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/app_dimens.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/agent_info_card.dart';
 import '../../widgets/detail_cta_bar.dart';
@@ -157,23 +158,23 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       photoUrls: listing.photoUrls,
                     ),
                     Padding(
-                      padding: const EdgeInsets.all(18),
+                      padding: const EdgeInsets.all(AppSpacing.s18),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           TagBadge(text: listing.category.label.toUpperCase(), color: AppColors.deepGreen),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: AppSpacing.s8),
                           Text(listing.title, style: AppFonts.cairo(size: 20, weight: FontWeight.w700)),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: AppSpacing.s4),
                           Text(listing.location, style: AppFonts.tajawal(size: 13, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6))),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.s16),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.baseline,
                             textBaseline: TextBaseline.alphabetic,
                             children: [
                               Text(formatEgp(listing.price), style: AppFonts.cairo(size: 26, weight: FontWeight.w800, color: AppColors.gold)),
                               if (listing.sizeSqm > 0) ...[
-                                const SizedBox(width: 8),
+                                const SizedBox(width: AppSpacing.s8),
                                 Text(
                                   '${formatEgp((listing.price / listing.sizeSqm).round())}/sqm',
                                   style: AppFonts.tajawal(size: 13, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)),
@@ -181,9 +182,9 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                               ],
                             ],
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.s16),
                           const Divider(height: 1, color: AppColors.divider),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.s16),
                           GridView.count(
                             crossAxisCount: 2,
                             shrinkWrap: true,
@@ -200,16 +201,16 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                               ListingFactCell(label: 'Ref Code', value: listing.refCode),
                             ],
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: AppSpacing.s20),
                           Text('Description', style: AppFonts.cairo(size: 14, weight: FontWeight.w700)),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: AppSpacing.s6),
                           Text(listing.description, style: AppFonts.tajawal(size: 13, weight: FontWeight.w400, color: AppColors.ink, height: 1.6)),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: AppSpacing.s20),
                           Text('Location', style: AppFonts.cairo(size: 14, weight: FontWeight.w700)),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: AppSpacing.s6),
                           if (listing.hasCoordinates) ...[
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(AppRadii.r12),
                               child: SizedBox(
                                 height: 160,
                                 width: double.infinity,
@@ -229,7 +230,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: AppSpacing.s8),
                             GestureDetector(
                               onTap: () => _openInGoogleMaps(listing),
                               child: Text(
@@ -241,10 +242,10 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                             Container(
                               height: 130,
                               width: double.infinity,
-                              decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(12)),
+                              decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(AppRadii.r12)),
                               child: const Center(child: Icon(Icons.map_outlined, color: AppColors.divider, size: 32)),
                             ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.s16),
                           const AgentInfoCard(name: 'Mostafa Adel', subtitle: 'Listing agent · ARDI verified'),
                         ],
                       ),
@@ -265,7 +266,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
             else
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
+                padding: const EdgeInsets.fromLTRB(AppSpacing.s18, AppSpacing.s14, AppSpacing.s18, AppSpacing.s16),
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   border: Border(top: BorderSide(color: AppColors.divider)),

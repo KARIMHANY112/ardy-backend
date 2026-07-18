@@ -7,6 +7,7 @@ import '../../models/listing.dart';
 import '../../services/api_client.dart';
 import '../../services/listings_repository.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/app_dimens.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/brand_header.dart';
 import '../../widgets/category_pill.dart';
@@ -111,24 +112,24 @@ class _PostListingScreenState extends State<PostListingScreen> {
           const BrandHeader(title: 'Post a Listing', subtitle: 'Reach verified commercial buyers'),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.s18, AppSpacing.s0, AppSpacing.s18, AppSpacing.s18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Category', style: AppFonts.tajawal(size: 12, weight: FontWeight.w600, color: AppColors.inkAlpha(0.6))),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.s6),
                   Row(
                     children: [
                       for (final category in ListingCategory.values)
                         Padding(
-                          padding: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.only(right: AppSpacing.s8),
                           child: CategoryPill(label: category.label, selected: _category == category, onTap: () => setState(() => _category = category)),
                         ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: AppSpacing.s14),
                   LabeledInputField(label: 'Title', controller: _titleController, hint: 'e.g. Industrial Unit, 10th of Ramadan'),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: AppSpacing.s14),
                   Row(
                     children: [
                       Expanded(
@@ -140,7 +141,7 @@ class _PostListingScreenState extends State<PostListingScreen> {
                           hint: '0',
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: AppSpacing.s10),
                       Expanded(
                         child: LabeledInputField(
                           label: 'Area',
@@ -152,16 +153,16 @@ class _PostListingScreenState extends State<PostListingScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: AppSpacing.s14),
                   LabeledInputField(label: 'Location', controller: _locationController, hint: 'City, area'),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppSpacing.s10),
                   GestureDetector(
                     onTap: _pickLocation,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s12, vertical: AppSpacing.s12),
                       decoration: BoxDecoration(
                         color: AppColors.sandy,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppRadii.r12),
                         border: Border.all(color: AppColors.divider),
                       ),
                       child: Row(
@@ -171,7 +172,7 @@ class _PostListingScreenState extends State<PostListingScreen> {
                             color: _pickedLocation == null ? AppColors.inkAlpha(0.6) : AppColors.nileGreen,
                             size: 20,
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: AppSpacing.s10),
                           Expanded(
                             child: Text(
                               _pickedLocation == null
@@ -188,26 +189,26 @@ class _PostListingScreenState extends State<PostListingScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: AppSpacing.s14),
                   Text('Licensing status', style: AppFonts.tajawal(size: 12, weight: FontWeight.w600, color: AppColors.inkAlpha(0.6))),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.s6),
                   Row(
                     children: [
                       for (final status in LicenseStatus.values)
                         Padding(
-                          padding: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.only(right: AppSpacing.s8),
                           child: CategoryPill(label: status.label, selected: _license == status, onTap: () => setState(() => _license = status)),
                         ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: AppSpacing.s14),
                   Text('Photos', style: AppFonts.tajawal(size: 12, weight: FontWeight.w600, color: AppColors.inkAlpha(0.6))),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.s6),
                   Row(
                     children: [
                       for (var i = 0; i < _photos.length; i++)
                         Padding(
-                          padding: const EdgeInsets.only(right: 10),
+                          padding: const EdgeInsets.only(right: AppSpacing.s10),
                           child: PhotoUploadSlot(
                             image: _photos[i],
                             onPicked: (file) => setState(() => _photos[i] = file),
@@ -215,9 +216,9 @@ class _PostListingScreenState extends State<PostListingScreen> {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppSpacing.s20),
                   PrimaryButton(label: 'Publish Listing', onPressed: _publish, loading: _submitting),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.s12),
                 ],
               ),
             ),

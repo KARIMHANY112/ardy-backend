@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/app_dimens.dart';
 
 /// One of the 3 square photo-attach slots on Post Listing. Tapping opens the
 /// gallery picker; a picked photo replaces the placeholder icon.
@@ -32,7 +33,7 @@ class PhotoUploadSlot extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: AppColors.sandy,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.r12),
           border: image == null ? Border.all(color: AppColors.divider) : null,
         ),
         child: image == null

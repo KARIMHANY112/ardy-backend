@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/app_dimens.dart';
 import 'listing_photo.dart';
 
 /// Hero photo gallery on Listing Detail: back button + save toggle overlaid
@@ -76,7 +77,7 @@ class _ListingGalleryHeaderState extends State<ListingGalleryHeader> {
               children: List.generate(
                 photoCount,
                 (index) => Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                  margin: const EdgeInsets.symmetric(horizontal: AppSpacing.s2_5),
                   width: 6,
                   height: 6,
                   decoration: BoxDecoration(

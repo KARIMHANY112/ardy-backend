@@ -9,6 +9,7 @@ import '../../widgets/brand_header.dart';
 import '../../widgets/chat_bubble.dart';
 import '../../widgets/chat_input_bar.dart';
 import '../../widgets/comparison_card.dart';
+import '../../theme/app_dimens.dart';
 
 /// Land Advisor (AI chat) — direction 1a: rounded-14 bubbles on sand bg,
 /// inline comparison-card message type embedded in the chat thread.
@@ -80,9 +81,9 @@ class _LandAdvisorScreenState extends State<LandAdvisorScreen> {
           Expanded(
             child: ListView.separated(
               controller: _scrollController,
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(AppSpacing.s18),
               itemCount: messages.length + (_sending ? 1 : 0),
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.s12),
               itemBuilder: (context, index) {
                 if (index == messages.length) {
                   return const ChatBubble(text: 'Thinking…', fromUser: false);
@@ -95,7 +96,7 @@ class _LandAdvisorScreenState extends State<LandAdvisorScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ChatBubble(text: message.text, fromUser: message.fromUser),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.s8),
                     ComparisonCard(listings: message.matches),
                   ],
                 );

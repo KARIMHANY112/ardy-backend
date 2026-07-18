@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/app_dimens.dart';
 
 /// Quick-access card used on the dashboards to route into the shared screens.
 class DashboardLinkCard extends StatelessWidget {
@@ -23,14 +24,14 @@ class DashboardLinkCard extends StatelessWidget {
 
     return Card(
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadii.r18),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.s16),
           child: Row(
             children: [
               CircleAvatar(backgroundColor: AppColors.sandy, child: Icon(icon, color: AppColors.nileGreen)),
-              const SizedBox(width: 14),
+              const SizedBox(width: AppSpacing.s14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

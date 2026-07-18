@@ -7,6 +7,7 @@ import '../../models/user.dart';
 import '../../services/listings_repository.dart';
 import '../../state/auth_session.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/app_dimens.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/brand_header.dart';
 import '../../widgets/listing_photo.dart';
@@ -81,17 +82,17 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Widget _buildProfileTab(BuildContext context, AppUser? user) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(AppSpacing.s18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), boxShadow: AppColors.cardShadow),
+            padding: const EdgeInsets.all(AppSpacing.s16),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadii.r18), boxShadow: AppColors.cardShadow),
             child: Row(
               children: [
                 const CircleAvatar(radius: 28, backgroundColor: AppColors.sandy, child: Icon(Icons.person, color: AppColors.ink, size: 28)),
-                const SizedBox(width: 14),
+                const SizedBox(width: AppSpacing.s14),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -102,7 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.s16),
           GestureDetector(
             onTap: () async {
               await context.read<AuthSession>().logout();
@@ -112,14 +113,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               height: 48,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppRadii.r14),
                 border: Border.all(color: AppColors.nileGreen, width: 1.5),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.logout, color: AppColors.nileGreen, size: 18),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.s8),
                   Text('Log Out', style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: AppColors.nileGreen)),
                 ],
               ),
@@ -146,19 +147,19 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           );
         }
         return ListView(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(AppSpacing.s18),
           children: [
             for (final request in snapshot.data!)
               GestureDetector(
                 onTap: () => context.push('/listing/${request.listing.id}', extra: request.listing),
                 child: Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), boxShadow: AppColors.cardShadow),
+                  margin: const EdgeInsets.only(bottom: AppSpacing.s10),
+                  padding: const EdgeInsets.all(AppSpacing.s14),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadii.r14), boxShadow: AppColors.cardShadow),
                   child: Row(
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(AppRadii.r10),
                         child: SizedBox(
                           width: 56,
                           height: 56,
@@ -168,13 +169,13 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppSpacing.s12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(request.listing.title, style: AppFonts.cairo(size: 14, weight: FontWeight.w700)),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: AppSpacing.s2),
                             Text(
                               request.listing.location,
                               style: AppFonts.tajawal(size: 12, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)),
@@ -182,10 +183,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           ],
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.s8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(20)),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s10, vertical: AppSpacing.s4),
+                        decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(AppRadii.r20)),
                         child: Text('Bought', style: AppFonts.tajawal(size: 12, weight: FontWeight.w700, color: AppColors.nileGreen)),
                       ),
                     ],

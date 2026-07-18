@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/app_dimens.dart';
 
 /// Shared bottom tab bar (Home, Saved, Advisor, Profile) per the design
 /// handoff. Wrap each of the top-level screens in this so navigation
@@ -54,7 +55,7 @@ class _BottomNav extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.s8, AppSpacing.s10, AppSpacing.s8, AppSpacing.s10),
           child: Row(
             children: List.generate(_items.length, (index) {
               final item = _items[index];
@@ -68,7 +69,7 @@ class _BottomNav extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(selected ? item.filled : item.outline, color: color, size: 22),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.s4),
                       Text(item.label, style: AppFonts.tajawal(size: 10, weight: FontWeight.w600, color: color)),
                     ],
                   ),

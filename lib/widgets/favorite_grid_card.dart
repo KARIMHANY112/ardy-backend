@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/listing.dart';
 import '../theme/app_theme.dart';
+import '../theme/app_dimens.dart';
 import '../utils/formatters.dart';
 import 'listing_photo.dart';
 import 'tag_badge.dart';
@@ -22,7 +23,7 @@ class FavoriteGridCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadii.r16),
           boxShadow: [BoxShadow(color: AppColors.deepGreen.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4))],
         ),
         clipBehavior: Clip.antiAlias,
@@ -59,7 +60,7 @@ class FavoriteGridCard extends StatelessWidget {
               ],
             ),
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(AppSpacing.s10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -69,7 +70,7 @@ class FavoriteGridCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: AppFonts.cairo(size: 12, weight: FontWeight.w700),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSpacing.s2),
                   Text(formatEgp(listing.price), style: AppFonts.tajawal(size: 12, weight: FontWeight.w700, color: AppColors.gold)),
                 ],
               ),

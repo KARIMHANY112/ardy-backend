@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/app_dimens.dart';
 
 /// A single Land Advisor chat message: assistant bubbles show the "AI"
 /// avatar and float left, user bubbles are filled nile-green and float right.
@@ -39,15 +40,15 @@ class ChatBubble extends StatelessWidget {
             backgroundColor: AppColors.nileGreen,
             child: Text('AI', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.s8),
         ],
         Flexible(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s13, vertical: AppSpacing.s10),
             constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
             decoration: BoxDecoration(
               color: fromUser ? AppColors.nileGreen : Colors.white,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppRadii.r14),
             ),
             child: RichText(text: TextSpan(style: baseStyle, children: _spans(baseStyle))),
           ),

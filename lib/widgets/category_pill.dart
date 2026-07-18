@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/app_dimens.dart';
 
 /// Single-select pill used for category/license/role filters throughout the
 /// app (Home & Favorites category filters, Post Listing category + license
@@ -18,10 +19,10 @@ class CategoryPill extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s16, vertical: AppSpacing.s8),
         decoration: BoxDecoration(
           color: selected ? AppColors.nileGreen : Colors.transparent,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(AppRadii.pill),
           border: selected ? null : Border.all(color: AppColors.divider, width: 1.5),
         ),
         child: Text(

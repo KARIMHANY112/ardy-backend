@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/app_dimens.dart';
 
 /// Pill text field + circular send button at the bottom of Land Advisor.
 class ChatInputBar extends StatelessWidget {
@@ -12,15 +13,15 @@ class ChatInputBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.s14, AppSpacing.s10, AppSpacing.s14, AppSpacing.s14),
       decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: AppColors.divider))),
       child: Row(
         children: [
           Expanded(
             child: Container(
               height: 44,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(999)),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s16),
+              decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(AppRadii.pill)),
               child: TextField(
                 controller: controller,
                 onSubmitted: (_) => onSend(),
@@ -34,7 +35,7 @@ class ChatInputBar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.s8),
           GestureDetector(
             onTap: onSend,
             child: Container(

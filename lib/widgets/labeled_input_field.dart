@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/app_dimens.dart';
 
 /// A label above a sandy rounded field — the input style used on Sign Up,
 /// Log In, and Post Listing.
@@ -28,10 +29,10 @@ class LabeledInputField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: AppFonts.tajawal(size: 12, weight: FontWeight.w600, color: AppColors.inkAlpha(0.6))),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.s6),
         Container(
           height: 46,
-          decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(AppRadii.r12)),
           child: TextField(
             controller: controller,
             obscureText: obscureText,
@@ -45,10 +46,10 @@ class LabeledInputField extends StatelessWidget {
               filled: true,
               fillColor: Colors.transparent,
               isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.nileGreen, width: 1.5)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.s14, vertical: AppSpacing.s14),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.r12), borderSide: BorderSide.none),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.r12), borderSide: BorderSide.none),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.r12), borderSide: const BorderSide(color: AppColors.nileGreen, width: 1.5)),
             ),
           ),
         ),

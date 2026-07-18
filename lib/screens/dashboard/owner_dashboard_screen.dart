@@ -9,6 +9,7 @@ import '../../services/api_client.dart';
 import '../../services/listings_repository.dart';
 import '../../state/auth_session.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/app_dimens.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
   const OwnerDashboardScreen({super.key});
@@ -86,20 +87,20 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             await Future.wait([_liveFuture, _buyRequestsFuture]);
           },
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.s16),
             children: [
               FutureBuilder<List<Listing>>(
                 future: _liveFuture,
                 builder: (context, snapshot) => _StatCard(label: 'Live Listings', value: snapshot.hasData ? '${snapshot.data!.length}' : '—'),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.s24),
               Text('Buy Requests', style: textTheme.titleLarge),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.s12),
               FutureBuilder<List<BuyRequest>>(
                 future: _buyRequestsFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState != ConnectionState.done) {
-                    return const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Center(child: CircularProgressIndicator()));
+                    return const Padding(padding: EdgeInsets.symmetric(vertical: AppSpacing.s16), child: Center(child: CircularProgressIndicator()));
                   }
                   if (snapshot.hasError) {
                     final message = snapshot.error is ApiException ? (snapshot.error as ApiException).message : 'Could not load buy requests';
@@ -113,19 +114,19 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                     children: [
                       for (final request in requests)
                         Card(
-                          margin: const EdgeInsets.only(bottom: 10),
+                          margin: const EdgeInsets.only(bottom: AppSpacing.s10),
                           child: Padding(
-                            padding: const EdgeInsets.all(14),
+                            padding: const EdgeInsets.all(AppSpacing.s14),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(request.listing.title, style: textTheme.titleMedium),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: AppSpacing.s4),
                                 Text(
                                   '${request.buyerName} · ${request.buyerPhone}',
                                   style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)),
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: AppSpacing.s12),
                                 Row(
                                   children: [
                                     Expanded(
@@ -134,7 +135,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                                         child: const Text('Call'),
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: AppSpacing.s12),
                                     Expanded(
                                       child: OutlinedButton(
                                         onPressed: () => _whatsAppBuyer(request.buyerPhone!, request.listing.title),
@@ -143,7 +144,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: AppSpacing.s8),
                                 Row(
                                   children: [
                                     Expanded(
@@ -152,7 +153,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                                         child: const Text('Reject'),
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: AppSpacing.s12),
                                     Expanded(
                                       child: ElevatedButton(
                                         onPressed: _busyIds.contains(request.id) ? null : () => _reviewBuyRequest(request.id, approve: true),
@@ -188,11 +189,11 @@ class _StatCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.s16, horizontal: AppSpacing.s12),
         child: Column(
           children: [
             Text(value, style: textTheme.headlineMedium?.copyWith(color: AppColors.nileGreen)),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.s4),
             Text(label, textAlign: TextAlign.center, style: textTheme.bodyMedium?.copyWith(fontSize: 12)),
           ],
         ),

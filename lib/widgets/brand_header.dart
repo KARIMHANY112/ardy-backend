@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/app_dimens.dart';
 import 'ardi_wordmark.dart';
 
 /// Compact screen header (wordmark + title [+ subtitle]) used on Favorites,
@@ -26,13 +27,13 @@ class BrandHeader extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.s18, AppSpacing.s16, AppSpacing.s18, AppSpacing.s14),
       color: dark ? AppColors.deepGreen : Colors.white,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           ArdiWordmark(light: !dark, arabicSize: 15, latinSize: 7, letterSpacing: 2),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSpacing.s10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -40,7 +41,7 @@ class BrandHeader extends StatelessWidget {
               children: [
                 Text(title, style: AppFonts.cairo(size: titleSize, weight: FontWeight.w700, color: titleColor)),
                 if (subtitle != null) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSpacing.s2),
                   Text(subtitle!, style: AppFonts.tajawal(size: 12, weight: FontWeight.w400, color: subtitleColor)),
                 ],
               ],
