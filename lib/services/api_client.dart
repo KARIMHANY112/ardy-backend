@@ -1,7 +1,5 @@
 import 'dart:convert';
-import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:http/http.dart' as http;
 
 class ApiException implements Exception {
@@ -26,10 +24,7 @@ class ApiClient {
 
   static String get baseUrl {
     if (_baseUrlOverride.isNotEmpty) return _baseUrlOverride;
-    if (kReleaseMode) return _productionUrl;
-    if (kIsWeb) return 'http://localhost:8000';
-    if (!kIsWeb && Platform.isAndroid) return 'http://10.0.2.2:8000';
-    return 'http://localhost:8000';
+    return _productionUrl;
   }
 
   Map<String, String> get _headers => {

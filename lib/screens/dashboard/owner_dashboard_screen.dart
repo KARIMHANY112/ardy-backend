@@ -5,10 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/buy_request.dart';
 import '../../models/listing.dart';
-import '../../models/user.dart';
 import '../../services/api_client.dart';
 import '../../services/listings_repository.dart';
-import '../../services/users_repository.dart';
 import '../../state/auth_session.dart';
 import '../../theme/app_theme.dart';
 
@@ -23,7 +21,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
   late Future<List<Listing>> _pendingFuture;
   late Future<List<Listing>> _liveFuture;
   late Future<List<BuyRequest>> _buyRequestsFuture;
-  late Future<List<AppUser>> _pendingBuyersFuture;
   final Set<String> _busyIds = {};
 
   @override
@@ -37,22 +34,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     _pendingFuture = repo.pendingRequests();
     _liveFuture = repo.browse();
     _buyRequestsFuture = repo.dashboardBuyRequests();
-    _pendingBuyersFuture = context.read<UsersRepository>().pendingBuyers();
-  }
-
-  Future<void> _reviewBuyer(String userId, {required bool approve}) async {
-    setState(() => _busyIds.add(userId));
-    try {
-      await context.read<UsersRepository>().review(userId, approve: approve);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(approve ? 'Approved' : 'Rejected')));
-      setState(_load);
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
-    } finally {
-      if (mounted) setState(() => _busyIds.remove(userId));
-    }
   }
 
   Future<void> _callBuyer(String phone) async {
@@ -119,7 +100,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
         child: RefreshIndicator(
           onRefresh: () async {
             setState(_load);
-            await Future.wait([_pendingFuture, _liveFuture, _buyRequestsFuture, _pendingBuyersFuture]);
+            await Future.wait([_pendingFuture, _liveFuture, _buyRequestsFuture]);
           },
           child: ListView(
             padding: const EdgeInsets.all(16),
@@ -137,13 +118,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                     child: FutureBuilder<List<Listing>>(
                       future: _liveFuture,
                       builder: (context, snapshot) => _StatCard(label: 'Live Listings', value: snapshot.hasData ? '${snapshot.data!.length}' : '—'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FutureBuilder<List<AppUser>>(
-                      future: _pendingBuyersFuture,
-                      builder: (context, snapshot) => _StatCard(label: 'Pending Buyers', value: snapshot.hasData ? '${snapshot.data!.length}' : '—'),
                     ),
                   ),
                 ],
@@ -194,65 +168,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                                     Expanded(
                                       child: ElevatedButton(
                                         onPressed: _busyIds.contains(listing.id) ? null : () => _review(listing.id, approve: true),
-                                        child: const Text('Approve'),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 24),
-              Text('Pending Buyers', style: textTheme.titleLarge),
-              const SizedBox(height: 12),
-              FutureBuilder<List<AppUser>>(
-                future: _pendingBuyersFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState != ConnectionState.done) {
-                    return const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Center(child: CircularProgressIndicator()));
-                  }
-                  if (snapshot.hasError) {
-                    final message = snapshot.error is ApiException ? (snapshot.error as ApiException).message : 'Could not load pending buyers';
-                    return Text(message, style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)));
-                  }
-                  final buyers = snapshot.data!;
-                  if (buyers.isEmpty) {
-                    return Text('No signups pending approval', style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)));
-                  }
-                  return Column(
-                    children: [
-                      for (final buyer in buyers)
-                        Card(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          child: Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(buyer.name, style: textTheme.titleMedium),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${buyer.email} · ${buyer.phone}',
-                                  style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)),
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton(
-                                        onPressed: _busyIds.contains(buyer.id) ? null : () => _reviewBuyer(buyer.id, approve: false),
-                                        child: const Text('Reject'),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: ElevatedButton(
-                                        onPressed: _busyIds.contains(buyer.id) ? null : () => _reviewBuyer(buyer.id, approve: true),
                                         child: const Text('Approve'),
                                       ),
                                     ),
