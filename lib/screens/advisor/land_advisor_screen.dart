@@ -109,6 +109,10 @@ class _LandAdvisorScreenState extends State<LandAdvisorScreen> {
       setState(() {
         _messages.add(_ChatMessage(text: "Couldn't reach the Land Advisor: ${e.message}", fromUser: false));
       });
+    } catch (_) {
+      setState(() {
+        _messages.add(_ChatMessage(text: "Couldn't reach the Land Advisor: no connection.", fromUser: false));
+      });
     } finally {
       if (mounted) setState(() => _sending = false);
       _scrollToEnd();
