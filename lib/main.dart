@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'routes/app_router.dart';
 import 'services/advisor_repository.dart';
@@ -10,8 +11,15 @@ import 'state/advisor_chat_session.dart';
 import 'state/auth_session.dart';
 import 'theme/app_theme.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  await SentryFlutter.init(
+    (options) {
+      options.dsn =
+          'https://7abf702d83eafb260982332235eeb186@o4511757314162688.ingest.de.sentry.io/4511757406699600';
+      options.tracesSampleRate = 0.1;
+    },
+    appRunner: () => runApp(const MyApp()),
+  );
 }
 
 class MyApp extends StatefulWidget {
