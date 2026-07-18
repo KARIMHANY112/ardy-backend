@@ -41,7 +41,7 @@ class FcmTokenUpdate(BaseModel):
 
 
 class UserReviewAction(BaseModel):
-    approve: bool  # true = approve, false = reject — mirrors ListingReviewAction
+    approve: bool  # true = approve, false = reject
 
 
 # ---- Listings ----
@@ -78,10 +78,6 @@ class ListingOut(BaseModel):
 
     class Config:
         from_attributes = True
-
-
-class ListingReviewAction(BaseModel):
-    approve: bool  # true = approve, false = reject — simple toggle, no reason field
 
 
 class ListingSoldAction(BaseModel):
@@ -134,7 +130,7 @@ class BuyRequestDashboardOut(BaseModel):
 
 
 class BuyRequestReviewAction(BaseModel):
-    approve: bool  # true = approve, false = reject — mirrors ListingReviewAction
+    approve: bool  # true = approve, false = reject
 
 
 # ---- Land Advisor ----

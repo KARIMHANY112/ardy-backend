@@ -18,7 +18,6 @@ from app.schemas.schemas import (
     ListingCreate,
     ListingOut,
     ListingDashboardOut,
-    ListingReviewAction,
     ListingSoldAction,
 )
 
@@ -50,19 +49,23 @@ def get_listing(listing_id: str, db: Session = Depends(get_db)):
 @router.post("", response_model=ListingOut)
 def submit_listing_request(
     payload: ListingCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_buyer),
 ):
-    """User submits a listing request — goes in as 'pending' until the owner approves it."""
+    """User submits a listing — goes live immediately, same as an owner-posted listing."""
     listing = Listing(
         ref_code=generate_ref_code(db),
         submitted_by=current_user.id,
-        status=ListingStatus.pending,
+        status=ListingStatus.live,
         **payload.model_dump(),
     )
     db.add(listing)
     db.commit()
     db.refresh(listing)
+
+    background_tasks.add_task(embed_and_store_listing, listing.id)
+
     return listing
 
 
@@ -130,8 +133,7 @@ def create_listing_as_owner(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_owner),
 ):
-    """Owner posts a listing directly — there's no one above the owner to review it,
-    so it goes live immediately instead of through the pending-approval flow."""
+    """Owner posts a listing directly — goes live immediately, same as a buyer submission."""
     listing = Listing(
         ref_code=generate_ref_code(db),
         submitted_by=current_user.id,
@@ -168,46 +170,6 @@ def upload_listing_photo_as_owner(
     listing.photo_urls = [*listing.photo_urls, url]
     db.commit()
     db.refresh(listing)
-    return listing
-
-
-@router.get("/dashboard/pending", response_model=list[ListingDashboardOut])
-def pending_requests(db: Session = Depends(get_db), current_user: User = Depends(require_owner)):
-    return db.query(Listing).filter(Listing.status == ListingStatus.pending).all()
-
-
-@router.post("/{listing_id}/review", response_model=ListingDashboardOut)
-def review_listing(
-    listing_id: str,
-    payload: ListingReviewAction,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_owner),
-):
-    """Simple approve/reject — the actual conversation happens over the phone call."""
-    listing = db.query(Listing).filter(Listing.id == listing_id).first()
-    if not listing:
-        raise HTTPException(status_code=404, detail="Listing not found")
-
-    listing.status = ListingStatus.live if payload.approve else ListingStatus.rejected
-    listing.reviewed_by = current_user.id
-    listing.reviewed_at = datetime.now(timezone.utc)
-    db.commit()
-    db.refresh(listing)
-
-    if payload.approve:
-        # Opens its own DB session — the request-scoped `db` may already be torn
-        # down by the time this background task actually runs.
-        background_tasks.add_task(embed_and_store_listing, listing.id)
-
-    background_tasks.add_task(
-        send_push_notification,
-        listing.submitted_by_user,
-        "Listing approved" if payload.approve else "Listing rejected",
-        f"Your listing {listing.ref_code} was "
-        + ("approved and is now live." if payload.approve else "rejected."),
-    )
-
     return listing
 
 

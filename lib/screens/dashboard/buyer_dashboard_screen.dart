@@ -68,7 +68,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
             DashboardLinkCard(
               icon: Icons.add_box_outlined,
               title: 'Post New Listing',
-              subtitle: 'Submit a listing for owner review',
+              subtitle: 'List a factory, land, or shop',
               onTap: () => context.go('/post-listing'),
             ),
             const SizedBox(height: 12),

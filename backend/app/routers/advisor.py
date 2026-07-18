@@ -47,8 +47,8 @@ def build_listing_text(listing: Listing) -> str:
 
 
 def embed_and_store_listing(listing_id) -> None:
-    """Runs as a background task after a listing is approved (see listings.py review_listing).
-    Opens its own session and refetches the listing rather than reusing the request-scoped
+    """Runs as a background task after a listing goes live (see listings.py submit_listing_request
+    and create_listing_as_owner). Opens its own session and refetches the listing rather than reusing the request-scoped
     `db`/`listing`, which may already be torn down by the time this actually runs.
     Swallow-and-log: a failed embedding shouldn't crash anything since it already went live —
     it just won't show up for the Land Advisor until retried."""

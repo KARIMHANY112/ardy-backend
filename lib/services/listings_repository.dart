@@ -74,16 +74,6 @@ class ListingsRepository {
 
   // ---- Owner dashboard ----
 
-  Future<List<Listing>> pendingRequests() async {
-    final data = await api.get('/listings/dashboard/pending') as List<dynamic>;
-    return data.map((json) => Listing.fromJson(json as Map<String, dynamic>)).toList();
-  }
-
-  Future<Listing> review(String listingId, {required bool approve}) async {
-    final data = await api.post('/listings/$listingId/review', body: {'approve': approve});
-    return Listing.fromJson(data as Map<String, dynamic>);
-  }
-
   /// Buy requests still awaiting review, newest first (GET /listings/dashboard/buy-requests).
   Future<List<BuyRequest>> dashboardBuyRequests() async {
     final data = await api.get('/listings/dashboard/buy-requests') as List<dynamic>;

@@ -44,19 +44,17 @@ FastAPI backend for the Ardy land & real estate marketplace.
 
    Visit `http://localhost:8000/docs` for interactive API docs (Swagger UI) — useful for testing endpoints from the browser before the Flutter app or dashboard are wired up.
 
-## How the approval workflow maps to endpoints
+## Listing lifecycle
 
 | Step | Endpoint | Who |
 |---|---|---|
-| Seller submits a listing request | `POST /listings` | seller |
+| Seller submits a listing — goes live immediately | `POST /listings` | seller |
 | Seller adds photos to their listing | `POST /listings/{id}/photos` | seller |
-| Seller checks their own request status | `GET /listings/mine/requests` | seller |
-| Owner sees pending requests | `GET /listings/dashboard/pending` | owner |
-| Owner approves or rejects | `POST /listings/{id}/review` | owner |
+| Seller checks their own listings | `GET /listings/mine/requests` | seller |
 | Buyers browse only live listings | `GET /listings` | anyone |
 | Buyer asks the Land Advisor | `POST /advisor/ask` | anyone |
 
-Approving a listing (`POST /listings/{id}/review` with `approve: true`) kicks off two background jobs: it embeds the listing for the Land Advisor (`app/routers/advisor.py::embed_and_store_listing`), and it push-notifies the seller (`app/core/notifications.py::send_push_notification`). Both are best-effort — failures are logged, not raised, since the listing has already gone live either way. The seller (or any user) registers their device for push via `POST /auth/me/fcm-token`.
+Submitting a listing (`POST /listings`, or `POST /listings/dashboard` for owners) embeds it for the Land Advisor in the background (`app/routers/advisor.py::embed_and_store_listing`) — best-effort, failures are logged not raised, since the listing is already live either way.
 
 ## Migrations
 

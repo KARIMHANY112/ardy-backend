@@ -82,7 +82,7 @@ class _PostListingScreenState extends State<PostListingScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Listing submitted for review')),
+        const SnackBar(content: Text('Listing is now live')),
       );
       setState(() {
         _titleController.clear();
