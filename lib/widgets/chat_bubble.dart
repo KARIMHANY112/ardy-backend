@@ -10,8 +10,25 @@ class ChatBubble extends StatelessWidget {
 
   const ChatBubble({super.key, required this.text, required this.fromUser});
 
+  static final _boldPattern = RegExp(r'\*\*(.+?)\*\*');
+
+  /// The advisor's replies use `**bold**` markdown; Text renders it literally,
+  /// so split it into spans instead of pulling in a full markdown renderer.
+  List<TextSpan> _spans(TextStyle style) {
+    final spans = <TextSpan>[];
+    var cursor = 0;
+    for (final match in _boldPattern.allMatches(text)) {
+      if (match.start > cursor) spans.add(TextSpan(text: text.substring(cursor, match.start)));
+      spans.add(TextSpan(text: match.group(1), style: style.copyWith(fontWeight: FontWeight.w700)));
+      cursor = match.end;
+    }
+    if (cursor < text.length) spans.add(TextSpan(text: text.substring(cursor)));
+    return spans;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final baseStyle = AppFonts.tajawal(size: 13, weight: FontWeight.w400, color: fromUser ? Colors.white : AppColors.ink, height: 1.5);
     return Row(
       mainAxisAlignment: fromUser ? MainAxisAlignment.end : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -32,10 +49,7 @@ class ChatBubble extends StatelessWidget {
               color: fromUser ? AppColors.nileGreen : Colors.white,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Text(
-              text,
-              style: AppFonts.tajawal(size: 13, weight: FontWeight.w400, color: fromUser ? Colors.white : AppColors.ink, height: 1.5),
-            ),
+            child: RichText(text: TextSpan(style: baseStyle, children: _spans(baseStyle))),
           ),
         ),
       ],
