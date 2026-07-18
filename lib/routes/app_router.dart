@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../models/listing.dart';
 import '../models/user.dart';
 import '../screens/advisor/land_advisor_screen.dart';
+import '../screens/auth/forgot_password_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/signup_screen.dart';
 import '../screens/dashboard/buyer_dashboard_screen.dart';
@@ -28,7 +29,7 @@ GoRouter buildAppRouter(AuthSession session) => GoRouter(
         if (!session.bootstrapped) return null;
 
         final loggedIn = session.isLoggedIn;
-        final onAuthScreen = location == '/login' || location == '/signup';
+        final onAuthScreen = location == '/login' || location == '/signup' || location == '/forgot-password';
 
         if (!loggedIn) return onAuthScreen ? null : '/login';
 
@@ -45,6 +46,7 @@ GoRouter buildAppRouter(AuthSession session) => GoRouter(
         GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
         GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
         GoRoute(path: '/signup', builder: (context, state) => const SignupScreen()),
+        GoRoute(path: '/forgot-password', builder: (context, state) => const ForgotPasswordScreen()),
 
         GoRoute(path: '/dashboard/buyer', builder: (context, state) => const BuyerDashboardScreen()),
         GoRoute(path: '/dashboard/owner', builder: (context, state) => const OwnerDashboardScreen()),

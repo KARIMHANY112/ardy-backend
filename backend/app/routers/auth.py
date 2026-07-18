@@ -1,14 +1,20 @@
+import secrets
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.email import send_password_reset_code
 from app.core.security import hash_password, verify_password, create_access_token
 from app.models.models import User, UserRole, UserStatus
-from app.schemas.schemas import FcmTokenUpdate, UserCreate, Token, UserOut
+from app.schemas.schemas import FcmTokenUpdate, ForgotPasswordRequest, ResetPasswordRequest, UserCreate, Token, UserOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+RESET_CODE_TTL_MINUTES = 15
 
 
 @router.post("/signup", response_model=Token)
@@ -26,6 +32,43 @@ def signup(payload: UserCreate, db: Session = Depends(get_db)):
         status=UserStatus.pending,
     )
     db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    token = create_access_token({"sub": str(user.id), "role": user.role.value})
+    return Token(access_token=token, user=UserOut.model_validate(user))
+
+
+@router.post("/forgot-password")
+def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """Always returns the same response whether or not the email exists, so this
+    endpoint can't be used to enumerate registered accounts."""
+    user = db.query(User).filter(User.email == payload.email).first()
+    if user:
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        user.reset_code_hash = hash_password(code)
+        user.reset_code_expires_at = datetime.now(timezone.utc) + timedelta(minutes=RESET_CODE_TTL_MINUTES)
+        db.commit()
+        send_password_reset_code(user.email, code)
+
+    return {"message": "If that email is registered, a reset code has been sent."}
+
+
+@router.post("/reset-password", response_model=Token)
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == payload.email).first()
+    invalid = HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired reset code")
+
+    if not user or not user.reset_code_hash or not user.reset_code_expires_at:
+        raise invalid
+    if datetime.now(timezone.utc) > user.reset_code_expires_at:
+        raise invalid
+    if not verify_password(payload.code, user.reset_code_hash):
+        raise invalid
+
+    user.password_hash = hash_password(payload.new_password)
+    user.reset_code_hash = None
+    user.reset_code_expires_at = None
     db.commit()
     db.refresh(user)
 

@@ -27,6 +27,14 @@ class Settings(BaseSettings):
     # Leave blank in dev; notifications are skipped (logged, not sent) when unset.
     firebase_credentials_path: str = ""
 
+    # Outbound email (password reset codes) via SMTP.
+    # Leave smtp_host blank in dev; emails are skipped (logged, not sent) when unset.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = "Ardy <no-reply@ardy.app>"
+
     class Config:
         env_file = ".env"
 

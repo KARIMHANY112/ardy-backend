@@ -78,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
-                  onTap: () {},
+                  onTap: () => context.go('/forgot-password'),
                   child: Text('Forgot password?', style: AppFonts.tajawal(size: 12, weight: FontWeight.w600, color: AppColors.gold)),
                 ),
               ),

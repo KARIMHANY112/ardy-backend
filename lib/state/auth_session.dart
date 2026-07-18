@@ -54,6 +54,19 @@ class AuthSession extends ChangeNotifier {
     await _applyToken(response as Map<String, dynamic>);
   }
 
+  Future<void> requestPasswordReset(String email) async {
+    await api.post('/auth/forgot-password', body: {'email': email});
+  }
+
+  Future<void> resetPassword({required String email, required String code, required String newPassword}) async {
+    final response = await api.post('/auth/reset-password', body: {
+      'email': email,
+      'code': code,
+      'new_password': newPassword,
+    });
+    await _applyToken(response as Map<String, dynamic>);
+  }
+
   Future<void> _applyToken(Map<String, dynamic> tokenResponse) async {
     final accessToken = tokenResponse['access_token'] as String;
     final user = AppUser.fromJson(tokenResponse['user'] as Map<String, dynamic>);

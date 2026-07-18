@@ -45,6 +45,11 @@ class User(Base):
     fcm_token = Column(String, nullable=True)  # registered by the client for push notifications
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    # Password reset — a short-lived hashed OTP the user re-enters in the app.
+    # Hashed (like the password itself) so a DB read alone can't be used to reset the account.
+    reset_code_hash = Column(String, nullable=True)
+    reset_code_expires_at = Column(DateTime(timezone=True), nullable=True)
+
     # New signups start pending; existing rows are backfilled to approved by the migration
     # so current accounts aren't locked out.
     status = Column(Enum(UserStatus), nullable=False, default=UserStatus.pending, server_default=UserStatus.approved.value)
