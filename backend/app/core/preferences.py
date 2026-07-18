@@ -10,12 +10,15 @@ land_type, location (all optional).
 """
 import re
 
-# Land-type keywords -> canonical type. Ordered so more specific words win.
+# Land-type keywords -> canonical type. Must match Listing.type's actual values
+# (land / factory / shop — see models/listing.dart's ListingCategory), not some
+# separate taxonomy, since _preference_filters ilike-matches this straight
+# against the DB column. Ordered so the more specific categories are checked
+# before the generic "land" catch-all (e.g. "factory land" should match factory).
 _LAND_TYPE_KEYWORDS = {
-    "agricultural": ["agricultural", "agriculture", "farm", "farmland", "crop", "cultivat"],
-    "residential": ["residential", "house", "home", "villa", "apartment", "housing"],
-    "commercial": ["commercial", "shop", "retail", "store", "office", "mall"],
-    "industrial": ["industrial", "factory", "warehouse", "plant"],
+    "factory": ["factory", "industrial", "warehouse", "plant", "manufactur"],
+    "shop": ["shop", "commercial", "retail", "store", "office", "mall"],
+    "land": ["land", "plot", "agricultural", "agriculture", "farm", "farmland", "crop", "cultivat", "acreage"],
 }
 
 # Egyptian governorates / common cities we recognise in free text.
@@ -80,6 +83,7 @@ def _extract_budget(text: str) -> dict:
         return prefs
 
     money_words = re.compile(r"\b(?:budget|price|cost|worth|afford|spend)\b")
+    size_unit_next = re.compile(rf"\s*(?:{'|'.join(re.escape(u) for u in _SIZE_UNITS)})\b")
     for m in re.finditer(_NUMBER, text):
         raw, suffix = m.group(1), m.group(2)
         after = text[m.end():m.end() + 12].lower()
@@ -88,10 +92,14 @@ def _extract_budget(text: str) -> dict:
             bool(re.match(rf"\s*{currency}", after))
             or bool(re.search(currency, window_before))
             or bool(money_words.search(window_before))
+            # A bare magnitude suffix ("30M", "1.5m") is itself a strong money signal in
+            # this domain — sizes are always given with an explicit unit (feddan/sqm),
+            # never as a plain order-of-magnitude number — unless a size unit follows
+            # right after it ("5k sqm"), in which case it's a size, not a budget.
+            or (bool(suffix) and not size_unit_next.match(after))
         )
         hint = _nearest_hint(text, m.start())
-        # Only treat as budget if it reads like money or carries a magnitude suffix with a bound hint.
-        if not looks_like_money and not (suffix and hint):
+        if not looks_like_money:
             continue
         value = _to_number(raw, suffix)
         if hint == "max":
@@ -160,8 +168,9 @@ def build_profile_summary(prefs: dict | None) -> str:
     embedding query text and in the LLM system context."""
     prefs = prefs or {}
     parts: list[str] = []
-    if prefs.get("land_type"):
-        parts.append(f"{prefs['land_type']} land")
+    land_type = prefs.get("land_type")
+    if land_type:
+        parts.append("land" if land_type == "land" else f"{land_type} land")
     if prefs.get("location"):
         parts.append(f"in {prefs['location'].title()}")
     if prefs.get("budget_min") is not None and prefs.get("budget_max") is not None:

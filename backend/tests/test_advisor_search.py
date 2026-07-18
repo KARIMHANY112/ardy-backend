@@ -29,7 +29,7 @@ class TestPreferenceFilters(unittest.TestCase):
         self.assertIn("listings.size >=", joined)
 
     def test_land_type_ilike(self):
-        sql = _sql(_preference_filters({"land_type": "agricultural"})[0]).lower()
+        sql = _sql(_preference_filters({"land_type": "land"})[0]).lower()
         self.assertIn("listings.type", sql)
         self.assertIn("like", sql)  # ILIKE renders as lower(...) LIKE lower(...)
 
@@ -44,7 +44,7 @@ class TestPreferenceFilters(unittest.TestCase):
                 "budget_max": 2,
                 "size_min": 3,
                 "size_max": 4,
-                "land_type": "residential",
+                "land_type": "shop",
                 "location": "cairo",
             }
         )

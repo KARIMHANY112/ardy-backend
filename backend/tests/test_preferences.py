@@ -41,9 +41,23 @@ class TestExtractPreferences(unittest.TestCase):
         self.assertNotIn("size_max", prefs)
 
     def test_land_type_keywords(self):
-        self.assertEqual(extract_preferences("looking for a villa")["land_type"], "residential")
-        self.assertEqual(extract_preferences("agricultural crop land")["land_type"], "agricultural")
-        self.assertEqual(extract_preferences("a warehouse")["land_type"], "industrial")
+        # Canonical values must match Listing.type exactly (land / factory / shop),
+        # since _preference_filters ilike-matches this straight against the DB column.
+        self.assertEqual(extract_preferences("agricultural crop land")["land_type"], "land")
+        self.assertEqual(extract_preferences("a warehouse")["land_type"], "factory")
+        self.assertEqual(extract_preferences("looking for a retail store")["land_type"], "shop")
+
+    def test_land_type_specific_wins_over_generic_land(self):
+        self.assertEqual(extract_preferences("factory land in New Cairo")["land_type"], "factory")
+
+    def test_budget_from_bare_magnitude_suffix(self):
+        # No currency word or min/max hint nearby — "30M" alone should still read as money.
+        self.assertEqual(extract_preferences("is there any land available with 30M?")["budget_max"], 30_000_000)
+
+    def test_magnitude_suffix_before_size_unit_not_treated_as_budget(self):
+        prefs = extract_preferences("looking for 5k sqm")
+        self.assertNotIn("budget_max", prefs)
+        self.assertEqual(prefs["size_max"], 5_000)
 
     def test_location(self):
         self.assertEqual(extract_preferences("something in Fayoum")["location"], "fayoum")
@@ -57,7 +71,7 @@ class TestExtractPreferences(unittest.TestCase):
 
     def test_combined_message(self):
         prefs = extract_preferences("agricultural, 5 feddan, budget 800k in Minya")
-        self.assertEqual(prefs["land_type"], "agricultural")
+        self.assertEqual(prefs["land_type"], "land")
         self.assertEqual(prefs["budget_max"], 800_000)
         self.assertEqual(prefs["location"], "minya")
         self.assertEqual(prefs["size_min"], 5)
@@ -69,13 +83,13 @@ class TestMergePreferences(unittest.TestCase):
         self.assertEqual(merged["budget_max"], 2_000_000)
 
     def test_old_values_persist(self):
-        merged = merge_preferences({"land_type": "agricultural"}, {"location": "giza"})
-        self.assertEqual(merged["land_type"], "agricultural")
+        merged = merge_preferences({"land_type": "land"}, {"location": "giza"})
+        self.assertEqual(merged["land_type"], "land")
         self.assertEqual(merged["location"], "giza")
 
     def test_empty_and_none_ignored(self):
-        merged = merge_preferences({"land_type": "residential"}, {"land_type": None, "location": ""})
-        self.assertEqual(merged["land_type"], "residential")
+        merged = merge_preferences({"land_type": "shop"}, {"land_type": None, "location": ""})
+        self.assertEqual(merged["land_type"], "shop")
         self.assertNotIn("location", merged)
 
     def test_accumulates_across_turns(self):
@@ -83,7 +97,7 @@ class TestMergePreferences(unittest.TestCase):
         prefs = merge_preferences(prefs, extract_preferences("I want farmland"))
         prefs = merge_preferences(prefs, extract_preferences("in Aswan"))
         prefs = merge_preferences(prefs, extract_preferences("under 900k EGP"))
-        self.assertEqual(prefs["land_type"], "agricultural")
+        self.assertEqual(prefs["land_type"], "land")
         self.assertEqual(prefs["location"], "aswan")
         self.assertEqual(prefs["budget_max"], 900_000)
 
@@ -92,11 +106,18 @@ class TestProfileSummary(unittest.TestCase):
     def test_empty(self):
         self.assertEqual(build_profile_summary({}), "")
 
+    def test_land_type_not_doubled(self):
+        self.assertIn("land", build_profile_summary({"land_type": "land"}))
+        self.assertNotIn("land land", build_profile_summary({"land_type": "land"}))
+
+    def test_land_type_qualifies_noun(self):
+        self.assertIn("factory land", build_profile_summary({"land_type": "factory"}))
+
     def test_full_profile(self):
         summary = build_profile_summary(
-            {"land_type": "agricultural", "location": "giza", "budget_max": 2_000_000, "size_max": 5}
+            {"land_type": "land", "location": "giza", "budget_max": 2_000_000, "size_max": 5}
         )
-        self.assertIn("agricultural land", summary)
+        self.assertIn("land", summary)
         self.assertIn("Giza", summary)
         self.assertIn("2,000,000 EGP", summary)
 
