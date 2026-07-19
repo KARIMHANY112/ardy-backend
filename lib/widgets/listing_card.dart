@@ -28,11 +28,21 @@ class ListingCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: 150,
-              width: double.infinity,
-              color: AppColors.sandy,
-              child: ListingPhoto(photoUrls: listing.photoUrls, iconSize: 36),
+            Stack(
+              children: [
+                Container(
+                  height: 150,
+                  width: double.infinity,
+                  color: AppColors.sandy,
+                  child: ListingPhoto(photoUrls: listing.photoUrls, iconSize: 36),
+                ),
+                if (listing.status == ListingStatus.papersPending)
+                  const Positioned(
+                    top: 8,
+                    left: 8,
+                    child: TagBadge(text: 'PENDING', color: AppColors.pendingAmber),
+                  ),
+              ],
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s14, vertical: AppSpacing.s12),

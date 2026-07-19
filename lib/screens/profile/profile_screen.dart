@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/buy_request.dart';
+import '../../models/listing.dart';
 import '../../models/user.dart';
 import '../../services/listings_repository.dart';
 import '../../state/auth_session.dart';
@@ -30,8 +31,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    // Approval only means the deal moved to papers-pending — this tab should only
+    // show purchases once the sale is fully finalized (listing.status == sold).
     _boughtFuture = context.read<ListingsRepository>().myBuyRequests().then(
-          (requests) => requests.where((r) => r.status == BuyRequestStatus.approved).toList(),
+          (requests) => requests.where((r) => r.status == BuyRequestStatus.approved && r.listing.status == ListingStatus.sold).toList(),
         );
   }
 

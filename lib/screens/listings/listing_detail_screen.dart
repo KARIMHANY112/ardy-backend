@@ -53,8 +53,9 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     final favoritesRepo = context.read<FavoritesRepository>();
 
     final listing = widget.initialListing ?? await listingsRepo.getById(widget.listingId);
-    if (listing.status != ListingStatus.live) {
-      // Favoriting/buy-requesting only applies to live listings — nothing more to load.
+    // Papers-pending listings are still browsable/favoritable (just not buy-requestable —
+    // the CTA bar below only shows for live), but sold/rejected/pending-review ones aren't.
+    if (listing.status != ListingStatus.live && listing.status != ListingStatus.papersPending) {
       return listing;
     }
     try {
@@ -162,7 +163,15 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          TagBadge(text: listing.category.label.toUpperCase(), color: AppColors.deepGreen),
+                          Row(
+                            children: [
+                              TagBadge(text: listing.category.label.toUpperCase(), color: AppColors.deepGreen),
+                              if (listing.status == ListingStatus.papersPending) ...[
+                                const SizedBox(width: AppSpacing.s8),
+                                const TagBadge(text: 'PENDING SALE', color: AppColors.pendingAmber),
+                              ],
+                            ],
+                          ),
                           const SizedBox(height: AppSpacing.s8),
                           Text(listing.title, style: AppFonts.cairo(size: 20, weight: FontWeight.w700)),
                           const SizedBox(height: AppSpacing.s4),

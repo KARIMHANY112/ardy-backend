@@ -153,7 +153,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
                           leading: const CircleAvatar(backgroundColor: AppColors.sandy, child: Icon(Icons.request_quote_outlined, color: AppColors.divider)),
                           title: Text(request.listing.title),
                           subtitle: Text('${request.listing.category.label} · ${request.listing.location}'),
-                          trailing: _BuyRequestStatusPill(status: request.status),
+                          trailing: _BuyRequestStatusPill(request: request),
                           onTap: request.listing.status == ListingStatus.live
                               ? () => context.push('/listing/${request.listing.id}')
                               : () => ScaffoldMessenger.of(context).showSnackBar(
@@ -195,21 +195,27 @@ class _StatusPill extends StatelessWidget {
 }
 
 class _BuyRequestStatusPill extends StatelessWidget {
-  final BuyRequestStatus status;
+  final BuyRequest request;
 
-  const _BuyRequestStatusPill({required this.status});
+  const _BuyRequestStatusPill({required this.request});
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (status) {
-      BuyRequestStatus.pending => AppColors.gold,
-      BuyRequestStatus.approved => AppColors.nileGreen,
-      BuyRequestStatus.rejected => Colors.redAccent,
+    // BuyRequestStatus.approved only means the deal reached papers-pending — it
+    // doesn't flip to anything else once the listing itself is finalized, so the
+    // displayed label has to come from the listing's current status instead.
+    final (label, color) = switch (request.status) {
+      BuyRequestStatus.pending => ('Requested', AppColors.gold),
+      BuyRequestStatus.rejected => ('Rejected', Colors.redAccent),
+      BuyRequestStatus.approved => switch (request.listing.status) {
+          ListingStatus.sold => ('Bought', AppColors.nileGreen),
+          _ => ('Papers Pending', AppColors.pendingAmber),
+        },
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s10, vertical: AppSpacing.s4),
       decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(AppRadii.r20)),
-      child: Text(status.label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12, color: color)),
+      child: Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12, color: color)),
     );
   }
 }

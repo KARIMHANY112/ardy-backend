@@ -32,15 +32,19 @@ def generate_ref_code(db: Session) -> str:
             return code
 
 
+_BROWSABLE_STATUSES = [ListingStatus.live, ListingStatus.papers_pending]
+
+
 @router.get("", response_model=list[ListingOut])
 def browse_listings(db: Session = Depends(get_db)):
-    """Public browse — buyers only ever see approved, live listings."""
-    return db.query(Listing).filter(Listing.status == ListingStatus.live).all()
+    """Public browse — live listings, plus papers-pending ones so a listing with a
+    deal in progress stays visible (as reserved) instead of vanishing from the feed."""
+    return db.query(Listing).filter(Listing.status.in_(_BROWSABLE_STATUSES)).all()
 
 
 @router.get("/{listing_id}", response_model=ListingOut)
 def get_listing(listing_id: str, db: Session = Depends(get_db)):
-    listing = db.query(Listing).filter(Listing.id == listing_id, Listing.status == ListingStatus.live).first()
+    listing = db.query(Listing).filter(Listing.id == listing_id, Listing.status.in_(_BROWSABLE_STATUSES)).first()
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
     return listing
@@ -350,12 +354,25 @@ def revert_papers_pending_to_live(
 ):
     """Owner reports the deal fell through during paperwork — listing goes back on
     the market. Doesn't resurrect any buy requests that were auto-rejected when the
-    listing first moved to papers-pending; interested buyers need to request again."""
+    listing first moved to papers-pending; interested buyers need to request again.
+    The buy request that got the listing to papers-pending in the first place (if
+    any) is reset from approved to rejected — otherwise it would keep showing as
+    "Bought" for that buyer if the listing later sells to someone else."""
     listing = db.query(Listing).filter(Listing.id == listing_id).first()
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
     if listing.status != ListingStatus.papers_pending:
         raise HTTPException(status_code=400, detail="Only listings with papers pending can be reverted")
+
+    stale_approved_requests = (
+        db.query(BuyRequest)
+        .filter(BuyRequest.listing_id == listing_id, BuyRequest.status == BuyRequestStatus.approved)
+        .all()
+    )
+    for request in stale_approved_requests:
+        request.status = BuyRequestStatus.rejected
+        request.reviewed_by = current_user.id
+        request.reviewed_at = datetime.now(timezone.utc)
 
     listing.status = ListingStatus.live
     listing.sold_price = None
@@ -363,6 +380,14 @@ def revert_papers_pending_to_live(
     listing.sold_to_phone = None
     db.commit()
     db.refresh(listing)
+
+    for request in stale_approved_requests:
+        background_tasks.add_task(
+            send_push_notification,
+            request.user,
+            "Deal fell through",
+            f"The sale for {listing.ref_code} fell through — it's back on the market.",
+        )
 
     background_tasks.add_task(
         send_push_notification,
