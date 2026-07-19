@@ -105,8 +105,10 @@ def my_requests(db: Session = Depends(get_db), current_user: User = Depends(requ
 @router.post("/{listing_id}/buy-request", response_model=BuyRequestOut)
 def request_to_buy(listing_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Buyer expresses interest in a listing — the owner follows up and closes the deal by phone.
-    A previously rejected request (e.g. lost to another buyer, or a fallen-through deal) doesn't
-    block trying again — only an active (pending/approved) request is idempotently returned."""
+    Only an active pending request is idempotently returned. A rejected request (lost to another
+    buyer) doesn't block trying again — and neither does a stray approved one: since this listing
+    is live, any approved request found for it is necessarily stale (approval always moves a
+    listing off live), e.g. left over from before revert-to-live also reset it."""
     listing = db.query(Listing).filter(Listing.id == listing_id, Listing.status == ListingStatus.live).first()
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
@@ -114,7 +116,7 @@ def request_to_buy(listing_id: str, db: Session = Depends(get_db), current_user:
     existing = db.query(BuyRequest).filter(
         BuyRequest.user_id == current_user.id,
         BuyRequest.listing_id == listing_id,
-        BuyRequest.status != BuyRequestStatus.rejected,
+        BuyRequest.status == BuyRequestStatus.pending,
     ).first()
     if existing:
         return existing

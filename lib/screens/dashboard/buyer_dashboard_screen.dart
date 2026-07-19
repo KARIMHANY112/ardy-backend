@@ -207,9 +207,13 @@ class _BuyRequestStatusPill extends StatelessWidget {
     final (label, color) = switch (request.status) {
       BuyRequestStatus.pending => ('Requested', AppColors.gold),
       BuyRequestStatus.rejected => ('Rejected', Colors.redAccent),
+      // An approved request whose listing is back to live is stale — that deal fell
+      // through (and reverting resets this properly now, but older data from before
+      // that fix won't retroactively update, so it needs to still be handled here).
       BuyRequestStatus.approved => switch (request.listing.status) {
           ListingStatus.sold => ('Bought', AppColors.nileGreen),
-          _ => ('Papers Pending', AppColors.pendingAmber),
+          ListingStatus.papersPending => ('Papers Pending', AppColors.pendingAmber),
+          _ => ('Fell Through', AppColors.inkAlpha(0.5)),
         },
     };
     return Container(
