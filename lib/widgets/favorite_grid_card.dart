@@ -51,17 +51,11 @@ class FavoriteGridCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (listing.status == ListingStatus.sold)
-                  const Positioned(
+                if (listing.status != ListingStatus.live)
+                  Positioned(
                     top: 8,
                     left: 8,
-                    child: TagBadge(text: 'SOLD', color: AppColors.ink),
-                  ),
-                if (listing.status == ListingStatus.papersPending)
-                  const Positioned(
-                    top: 8,
-                    left: 8,
-                    child: TagBadge(text: 'PAPERS PENDING', color: AppColors.pendingAmber),
+                    child: TagBadge.saleStatus(listing.status),
                   ),
               ],
             ),

@@ -104,13 +104,17 @@ def my_requests(db: Session = Depends(get_db), current_user: User = Depends(requ
 
 @router.post("/{listing_id}/buy-request", response_model=BuyRequestOut)
 def request_to_buy(listing_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """Buyer expresses interest in a listing — the owner follows up and closes the deal by phone."""
+    """Buyer expresses interest in a listing — the owner follows up and closes the deal by phone.
+    A previously rejected request (e.g. lost to another buyer, or a fallen-through deal) doesn't
+    block trying again — only an active (pending/approved) request is idempotently returned."""
     listing = db.query(Listing).filter(Listing.id == listing_id, Listing.status == ListingStatus.live).first()
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
 
     existing = db.query(BuyRequest).filter(
-        BuyRequest.user_id == current_user.id, BuyRequest.listing_id == listing_id
+        BuyRequest.user_id == current_user.id,
+        BuyRequest.listing_id == listing_id,
+        BuyRequest.status != BuyRequestStatus.rejected,
     ).first()
     if existing:
         return existing

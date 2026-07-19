@@ -4,6 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../models/buy_request.dart';
 import '../../models/listing.dart';
 import '../../services/api_client.dart';
 import '../../services/favorites_repository.dart';
@@ -66,7 +67,9 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     }
     try {
       final buyRequests = await listingsRepo.myBuyRequests();
-      _hasRequestedBuy = buyRequests.any((r) => r.listing.id == widget.listingId);
+      // A rejected request (lost to another buyer, or a fallen-through deal) doesn't
+      // count — the buyer should still be able to request again.
+      _hasRequestedBuy = buyRequests.any((r) => r.listing.id == widget.listingId && r.status != BuyRequestStatus.rejected);
     } catch (_) {
       // Same — don't block the listing render on this.
     }

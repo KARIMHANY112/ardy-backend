@@ -23,6 +23,20 @@ class TagBadge extends StatelessWidget {
     return TagBadge(text: status.label, color: color);
   }
 
+  /// The selling status shown on browse cards — available (live), papers
+  /// pending, or sold. Distinct from [license], which is about the property's
+  /// registration paperwork, not whether it's for sale.
+  factory TagBadge.saleStatus(ListingStatus status) {
+    final (text, color) = switch (status) {
+      ListingStatus.live => ('AVAILABLE', AppColors.nileGreen),
+      ListingStatus.papersPending => ('PAPERS PENDING', AppColors.pendingAmber),
+      ListingStatus.sold => ('SOLD', AppColors.ink),
+      ListingStatus.pending => ('PENDING REVIEW', AppColors.pendingAmber),
+      ListingStatus.rejected => ('REJECTED', Colors.redAccent),
+    };
+    return TagBadge(text: text, color: color);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
