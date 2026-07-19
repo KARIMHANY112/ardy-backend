@@ -44,6 +44,7 @@ class ListingsRepository {
     required double price,
     required double size,
     required String location,
+    required LicenseStatus license,
     String? description,
     double? latitude,
     double? longitude,
@@ -54,6 +55,7 @@ class ListingsRepository {
       'price': price,
       'size': size,
       'location': location,
+      'license_status': license.wireValue,
     };
     if (description != null && description.isNotEmpty) body['description'] = description;
     if (latitude != null) body['latitude'] = latitude;

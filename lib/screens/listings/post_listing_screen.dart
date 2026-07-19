@@ -72,6 +72,7 @@ class _PostListingScreenState extends State<PostListingScreen> {
         price: price,
         size: area,
         location: location,
+        license: _license,
         latitude: _pickedLocation?.latitude,
         longitude: _pickedLocation?.longitude,
       );

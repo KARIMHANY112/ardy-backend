@@ -34,6 +34,12 @@ class BuyRequestStatus(str, enum.Enum):
     rejected = "rejected"
 
 
+class LicenseStatus(str, enum.Enum):
+    licensed = "licensed"            # property has its registration/license papers in order
+    pending = "pending"              # licensing is still in progress
+    not_applicable = "not_applicable"  # no license needed for this property type
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -83,6 +89,10 @@ class Listing(Base):
     longitude = Column(Float, nullable=True)
 
     status = Column(Enum(ListingStatus), nullable=False, default=ListingStatus.pending)
+
+    # Set by the submitter when posting — whether the property's registration papers
+    # are in order. Defaults to pending for rows that predate this field.
+    license_status = Column(Enum(LicenseStatus), nullable=False, default=LicenseStatus.pending, server_default=LicenseStatus.pending.value)
 
     # Set when the owner marks the listing sold — the deal itself is arranged by phone,
     # so these are just the record of what was agreed.

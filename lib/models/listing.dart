@@ -29,6 +29,21 @@ extension LicenseStatusLabel on LicenseStatus {
   }
 }
 
+/// The backend's status values are snake_case (e.g. "not_applicable"), which
+/// doesn't match Dart's camelCase enum names, so this needs an explicit wire
+/// mapping instead of relying on [name] directly.
+extension LicenseStatusWire on LicenseStatus {
+  String get wireValue => switch (this) {
+        LicenseStatus.notApplicable => 'not_applicable',
+        _ => name,
+      };
+}
+
+LicenseStatus _licenseStatusFromString(String value) => LicenseStatus.values.firstWhere(
+      (s) => s.wireValue == value,
+      orElse: () => LicenseStatus.pending,
+    );
+
 /// Mirrors backend app.models.models.ListingStatus — the moderation workflow
 /// state (owner review), distinct from the UI-only [LicenseStatus] above.
 enum ListingStatus { pending, live, papersPending, rejected, sold }
@@ -104,8 +119,7 @@ class Listing {
 
   bool get hasCoordinates => latitude != null && longitude != null;
 
-  /// Maps backend app.schemas.schemas.ListingOut. The backend has no licensing
-  /// field yet, so `license` defaults to pending until that's added server-side.
+  /// Maps backend app.schemas.schemas.ListingOut.
   factory Listing.fromJson(Map<String, dynamic> json) => Listing(
         id: json['id'] as String,
         refCode: json['ref_code'] as String,
@@ -115,7 +129,7 @@ class Listing {
         sizeSqm: (json['size'] as num).toDouble(),
         location: json['location'] as String,
         description: json['description'] as String? ?? '',
-        license: LicenseStatus.pending,
+        license: _licenseStatusFromString(json['license_status'] as String? ?? 'pending'),
         status: _listingStatusFromString(json['status'] as String),
         photoUrls: (json['photo_urls'] as List<dynamic>? ?? const []).cast<String>(),
         latitude: (json['latitude'] as num?)?.toDouble(),
@@ -135,6 +149,7 @@ class Listing {
         'location': location,
         'description': description,
         'status': status.wireValue,
+        'license_status': license.wireValue,
         'photo_urls': photoUrls,
         'latitude': latitude,
         'longitude': longitude,

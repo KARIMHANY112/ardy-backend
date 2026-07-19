@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr
 
-from app.models.models import UserRole, UserStatus, ListingStatus, BuyRequestStatus
+from app.models.models import UserRole, UserStatus, ListingStatus, BuyRequestStatus, LicenseStatus
 
 
 # ---- Auth ----
@@ -65,6 +65,7 @@ class ListingCreate(BaseModel):
     description: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    license_status: LicenseStatus = LicenseStatus.pending
 
 
 class ListingOut(BaseModel):
@@ -77,6 +78,7 @@ class ListingOut(BaseModel):
     location: str
     description: Optional[str]
     status: ListingStatus
+    license_status: LicenseStatus
     photo_urls: list[str]
     created_at: datetime
     latitude: Optional[float] = None
