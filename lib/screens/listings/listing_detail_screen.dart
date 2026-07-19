@@ -67,9 +67,11 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     }
     try {
       final buyRequests = await listingsRepo.myBuyRequests();
-      // A rejected request (lost to another buyer, or a fallen-through deal) doesn't
-      // count — the buyer should still be able to request again.
-      _hasRequestedBuy = buyRequests.any((r) => r.listing.id == widget.listingId && r.status != BuyRequestStatus.rejected);
+      // Only a pending request counts as "already requested" — mirrors the backend's
+      // request_to_buy idempotency check. This screen only shows the buy CTA for live
+      // listings, so any approved request found here is necessarily stale (approval
+      // always moves a listing off live) and shouldn't block a fresh request either.
+      _hasRequestedBuy = buyRequests.any((r) => r.listing.id == widget.listingId && r.status == BuyRequestStatus.pending);
     } catch (_) {
       // Same — don't block the listing render on this.
     }
