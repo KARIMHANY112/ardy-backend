@@ -21,10 +21,11 @@ class UserStatus(str, enum.Enum):
 
 
 class ListingStatus(str, enum.Enum):
-    pending = "pending"   # seller submitted, awaiting owner review
-    live = "live"         # approved, visible to buyers
+    pending = "pending"                 # seller submitted, awaiting owner review
+    live = "live"                       # approved, visible to buyers
+    papers_pending = "papers_pending"   # a buyer is confirmed but registration paperwork isn't done yet
     rejected = "rejected"
-    sold = "sold"         # deal closed (arranged by phone), no longer live
+    sold = "sold"                       # papers finalized, deal fully closed
 
 
 class BuyRequestStatus(str, enum.Enum):

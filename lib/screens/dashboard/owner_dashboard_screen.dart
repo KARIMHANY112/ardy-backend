@@ -21,6 +21,7 @@ class OwnerDashboardScreen extends StatefulWidget {
 class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
   late Future<List<Listing>> _liveFuture;
   late Future<List<BuyRequest>> _buyRequestsFuture;
+  late Future<List<Listing>> _papersPendingFuture;
   final Set<String> _busyIds = {};
 
   @override
@@ -33,6 +34,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     final repo = context.read<ListingsRepository>();
     _liveFuture = repo.browse();
     _buyRequestsFuture = repo.dashboardBuyRequests();
+    _papersPendingFuture = repo.dashboardPapersPending();
   }
 
   Future<void> _callBuyer(String phone) async {
@@ -52,7 +54,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
       await context.read<ListingsRepository>().reviewBuyRequest(requestId, approve: approve);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(approve ? 'Marked sold to this buyer' : 'Buy request rejected')),
+        SnackBar(content: Text(approve ? 'Papers pending for this buyer' : 'Buy request rejected')),
       );
       setState(_load);
     } on ApiException catch (e) {
@@ -60,6 +62,36 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     } finally {
       if (mounted) setState(() => _busyIds.remove(requestId));
+    }
+  }
+
+  Future<void> _finalizeSale(String listingId) async {
+    setState(() => _busyIds.add(listingId));
+    try {
+      await context.read<ListingsRepository>().finalizeSale(listingId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sale finalized')));
+      setState(_load);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) setState(() => _busyIds.remove(listingId));
+    }
+  }
+
+  Future<void> _revertToLive(String listingId) async {
+    setState(() => _busyIds.add(listingId));
+    try {
+      await context.read<ListingsRepository>().revertToLive(listingId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listing back on the market')));
+      setState(_load);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) setState(() => _busyIds.remove(listingId));
     }
   }
 
@@ -84,7 +116,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
         child: RefreshIndicator(
           onRefresh: () async {
             setState(_load);
-            await Future.wait([_liveFuture, _buyRequestsFuture]);
+            await Future.wait([_liveFuture, _buyRequestsFuture, _papersPendingFuture]);
           },
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.s16),
@@ -157,7 +189,66 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                                     Expanded(
                                       child: ElevatedButton(
                                         onPressed: _busyIds.contains(request.id) ? null : () => _reviewBuyRequest(request.id, approve: true),
-                                        child: const Text('Approve (mark sold)'),
+                                        child: const Text('Approve (papers pending)'),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: AppSpacing.s24),
+              Text('Papers Pending', style: textTheme.titleLarge),
+              const SizedBox(height: AppSpacing.s12),
+              FutureBuilder<List<Listing>>(
+                future: _papersPendingFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const Padding(padding: EdgeInsets.symmetric(vertical: AppSpacing.s16), child: Center(child: CircularProgressIndicator()));
+                  }
+                  if (snapshot.hasError) {
+                    final message = snapshot.error is ApiException ? (snapshot.error as ApiException).message : 'Could not load papers-pending listings';
+                    return Text(message, style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)));
+                  }
+                  final listings = snapshot.data!;
+                  if (listings.isEmpty) {
+                    return Text('No sales awaiting paperwork', style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)));
+                  }
+                  return Column(
+                    children: [
+                      for (final listing in listings)
+                        Card(
+                          margin: const EdgeInsets.only(bottom: AppSpacing.s10),
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.s14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(listing.title, style: textTheme.titleMedium),
+                                const SizedBox(height: AppSpacing.s4),
+                                Text(
+                                  'Buyer: ${listing.soldToName ?? '—'} · ${listing.soldToPhone ?? '—'}',
+                                  style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)),
+                                ),
+                                const SizedBox(height: AppSpacing.s12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton(
+                                        onPressed: _busyIds.contains(listing.id) ? null : () => _revertToLive(listing.id),
+                                        child: const Text('Deal Fell Through'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.s12),
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        onPressed: _busyIds.contains(listing.id) ? null : () => _finalizeSale(listing.id),
+                                        child: const Text('Finalize Sale'),
                                       ),
                                     ),
                                   ],

@@ -90,7 +90,7 @@ class ListingOut(BaseModel):
         from_attributes = True
 
 
-class ListingSoldAction(BaseModel):
+class ListingSaleAction(BaseModel):
     sold_price: float
     sold_to_name: str
     sold_to_phone: str

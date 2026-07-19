@@ -182,6 +182,7 @@ class _StatusPill extends StatelessWidget {
     final color = switch (status) {
       ListingStatus.live => AppColors.nileGreen,
       ListingStatus.pending => AppColors.gold,
+      ListingStatus.papersPending => AppColors.pendingAmber,
       ListingStatus.rejected => Colors.redAccent,
       ListingStatus.sold => AppColors.ink,
     };

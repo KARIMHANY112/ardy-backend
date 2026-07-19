@@ -18,7 +18,7 @@ from app.schemas.schemas import (
     ListingCreate,
     ListingOut,
     ListingDashboardOut,
-    ListingSoldAction,
+    ListingSaleAction,
 )
 
 router = APIRouter(prefix="/listings", tags=["listings"])
@@ -178,6 +178,16 @@ def sold_listings(db: Session = Depends(get_db), current_user: User = Depends(re
     return db.query(Listing).filter(Listing.status == ListingStatus.sold).order_by(Listing.sold_at.desc()).all()
 
 
+@router.get("/dashboard/papers-pending", response_model=list[ListingDashboardOut])
+def papers_pending_listings(db: Session = Depends(get_db), current_user: User = Depends(require_owner)):
+    return (
+        db.query(Listing)
+        .filter(Listing.status == ListingStatus.papers_pending)
+        .order_by(Listing.created_at.desc())
+        .all()
+    )
+
+
 @router.get("/dashboard/buy-requests", response_model=list[BuyRequestDashboardOut])
 def buy_requests_dashboard(db: Session = Depends(get_db), current_user: User = Depends(require_owner)):
     """Pending buy requests across all listings, newest first — owner approves or rejects
@@ -198,9 +208,10 @@ def review_buy_request(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_owner),
 ):
-    """Owner approves or rejects a buyer's interest in a listing. Approving closes
-    the deal immediately — the listing is marked sold to this buyer at its asking
-    price (the actual negotiation happens over the phone before the owner clicks approve)."""
+    """Owner approves or rejects a buyer's interest in a listing. Approving moves the
+    listing to papers-pending at its asking price (the actual negotiation happens over
+    the phone before the owner clicks approve) — it's not sold until the registration
+    paperwork is finalized via POST /listings/{id}/finalize-sale."""
     buy_request = db.query(BuyRequest).filter(BuyRequest.id == request_id).first()
     if not buy_request:
         raise HTTPException(status_code=404, detail="Buy request not found")
@@ -215,11 +226,11 @@ def review_buy_request(
     other_pending_requests = []
     if payload.approve:
         listing = buy_request.listing
-        listing.status = ListingStatus.sold
+        listing.status = ListingStatus.papers_pending
         listing.sold_price = listing.price
         listing.sold_to_name = buy_request.buyer_name
         listing.sold_to_phone = buy_request.buyer_phone
-        listing.sold_at = datetime.now(timezone.utc)
+        # sold_at stays unset until finalize-sale — papers-pending isn't a closed deal yet.
 
         # Any other buyers who requested this same listing are moot now — auto-reject them
         # rather than leaving them pending against a listing that's no longer live.
@@ -245,7 +256,7 @@ def review_buy_request(
         buy_request.user,
         "Buy request approved" if payload.approve else "Buy request rejected",
         f"Your request to buy {buy_request.listing.ref_code} was "
-        + ("approved. The owner will contact you to close the deal." if payload.approve else "not approved."),
+        + ("approved. The owner will follow up to finalize the registration paperwork." if payload.approve else "not approved."),
     )
 
     for other in other_pending_requests:
@@ -253,39 +264,69 @@ def review_buy_request(
             send_push_notification,
             other.user,
             "Buy request rejected",
-            f"Your request to buy {other.listing.ref_code} was not approved — the listing was sold to another buyer.",
+            f"Your request to buy {other.listing.ref_code} was not approved — the listing went to another buyer.",
         )
 
     if payload.approve:
         background_tasks.add_task(
             send_push_notification,
             buy_request.listing.submitted_by_user,
-            "Listing sold",
-            f"Your listing {buy_request.listing.ref_code} has been marked as sold.",
+            "Papers pending",
+            f"Your listing {buy_request.listing.ref_code} has a buyer — papers are now pending before the sale is finalized.",
         )
 
     return buy_request
 
 
-@router.post("/{listing_id}/sold", response_model=ListingDashboardOut)
-def mark_listing_sold(
+@router.post("/{listing_id}/papers-pending", response_model=ListingDashboardOut)
+def mark_listing_papers_pending(
     listing_id: str,
-    payload: ListingSoldAction,
+    payload: ListingSaleAction,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_owner),
 ):
-    """Owner records a closed deal — the sale itself was arranged by phone."""
+    """Owner records a deal agreed by phone (no in-app buy request involved) — moves
+    the listing to papers-pending, not straight to sold, same as an approved buy
+    request. Finalized later via POST /listings/{id}/finalize-sale."""
     listing = db.query(Listing).filter(Listing.id == listing_id).first()
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
     if listing.status != ListingStatus.live:
-        raise HTTPException(status_code=400, detail="Only live listings can be marked sold")
+        raise HTTPException(status_code=400, detail="Only live listings can be moved to papers pending")
 
-    listing.status = ListingStatus.sold
+    listing.status = ListingStatus.papers_pending
     listing.sold_price = payload.sold_price
     listing.sold_to_name = payload.sold_to_name
     listing.sold_to_phone = payload.sold_to_phone
+    db.commit()
+    db.refresh(listing)
+
+    background_tasks.add_task(
+        send_push_notification,
+        listing.submitted_by_user,
+        "Papers pending",
+        f"Your listing {listing.ref_code} has a buyer — papers are now pending before the sale is finalized.",
+    )
+
+    return listing
+
+
+@router.post("/{listing_id}/finalize-sale", response_model=ListingDashboardOut)
+def finalize_sale(
+    listing_id: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_owner),
+):
+    """Owner confirms the registration paperwork is done — the sale is now 100% closed."""
+    listing = db.query(Listing).filter(Listing.id == listing_id).first()
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    if listing.status != ListingStatus.papers_pending:
+        raise HTTPException(status_code=400, detail="Only listings with papers pending can be finalized")
+
+    listing.status = ListingStatus.sold
     listing.sold_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(listing)
@@ -294,7 +335,40 @@ def mark_listing_sold(
         send_push_notification,
         listing.submitted_by_user,
         "Listing sold",
-        f"Your listing {listing.ref_code} has been marked as sold.",
+        f"Your listing {listing.ref_code} sale is finalized.",
+    )
+
+    return listing
+
+
+@router.post("/{listing_id}/revert-to-live", response_model=ListingDashboardOut)
+def revert_papers_pending_to_live(
+    listing_id: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_owner),
+):
+    """Owner reports the deal fell through during paperwork — listing goes back on
+    the market. Doesn't resurrect any buy requests that were auto-rejected when the
+    listing first moved to papers-pending; interested buyers need to request again."""
+    listing = db.query(Listing).filter(Listing.id == listing_id).first()
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    if listing.status != ListingStatus.papers_pending:
+        raise HTTPException(status_code=400, detail="Only listings with papers pending can be reverted")
+
+    listing.status = ListingStatus.live
+    listing.sold_price = None
+    listing.sold_to_name = None
+    listing.sold_to_phone = None
+    db.commit()
+    db.refresh(listing)
+
+    background_tasks.add_task(
+        send_push_notification,
+        listing.submitted_by_user,
+        "Listing back on the market",
+        f"The deal for {listing.ref_code} fell through — it's live again.",
     )
 
     return listing

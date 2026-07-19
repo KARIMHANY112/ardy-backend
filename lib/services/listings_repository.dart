@@ -80,9 +80,29 @@ class ListingsRepository {
     return data.map((json) => BuyRequest.fromJson(json as Map<String, dynamic>)).toList();
   }
 
-  /// Approving marks the listing sold to this buyer; rejecting just declines the request.
+  /// Approving moves the listing to papers-pending for this buyer; rejecting just
+  /// declines the request.
   Future<BuyRequest> reviewBuyRequest(String requestId, {required bool approve}) async {
     final data = await api.post('/listings/buy-requests/$requestId/review', body: {'approve': approve});
     return BuyRequest.fromJson(data as Map<String, dynamic>);
+  }
+
+  /// Listings with a buyer confirmed but registration paperwork not yet finalized
+  /// (GET /listings/dashboard/papers-pending).
+  Future<List<Listing>> dashboardPapersPending() async {
+    final data = await api.get('/listings/dashboard/papers-pending') as List<dynamic>;
+    return data.map((json) => Listing.fromJson(json as Map<String, dynamic>)).toList();
+  }
+
+  /// Owner confirms the paperwork is done — the sale is now fully closed.
+  Future<Listing> finalizeSale(String listingId) async {
+    final data = await api.post('/listings/$listingId/finalize-sale');
+    return Listing.fromJson(data as Map<String, dynamic>);
+  }
+
+  /// Owner reports the deal fell through during paperwork — listing goes back to live.
+  Future<Listing> revertToLive(String listingId) async {
+    final data = await api.post('/listings/$listingId/revert-to-live');
+    return Listing.fromJson(data as Map<String, dynamic>);
   }
 }

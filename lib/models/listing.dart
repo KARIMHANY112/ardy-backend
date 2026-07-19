@@ -31,7 +31,7 @@ extension LicenseStatusLabel on LicenseStatus {
 
 /// Mirrors backend app.models.models.ListingStatus — the moderation workflow
 /// state (owner review), distinct from the UI-only [LicenseStatus] above.
-enum ListingStatus { pending, live, rejected, sold }
+enum ListingStatus { pending, live, papersPending, rejected, sold }
 
 extension ListingStatusLabel on ListingStatus {
   String get label {
@@ -40,6 +40,8 @@ extension ListingStatusLabel on ListingStatus {
         return 'Pending review';
       case ListingStatus.live:
         return 'Live';
+      case ListingStatus.papersPending:
+        return 'Papers Pending';
       case ListingStatus.rejected:
         return 'Rejected';
       case ListingStatus.sold:
@@ -48,8 +50,18 @@ extension ListingStatusLabel on ListingStatus {
   }
 }
 
+/// The backend's status values are snake_case (e.g. "papers_pending"), which
+/// doesn't match Dart's camelCase enum names, so status needs this explicit
+/// wire mapping instead of relying on [name] directly.
+extension ListingStatusWire on ListingStatus {
+  String get wireValue => switch (this) {
+        ListingStatus.papersPending => 'papers_pending',
+        _ => name,
+      };
+}
+
 ListingStatus _listingStatusFromString(String value) => ListingStatus.values.firstWhere(
-      (s) => s.name == value,
+      (s) => s.wireValue == value,
       orElse: () => ListingStatus.pending,
     );
 
@@ -68,6 +80,8 @@ class Listing {
   final bool isFavorite;
   final double? latitude;
   final double? longitude;
+  final String? soldToName;
+  final String? soldToPhone;
 
   const Listing({
     required this.id,
@@ -84,6 +98,8 @@ class Listing {
     this.isFavorite = false,
     this.latitude,
     this.longitude,
+    this.soldToName,
+    this.soldToPhone,
   });
 
   bool get hasCoordinates => latitude != null && longitude != null;
@@ -104,6 +120,8 @@ class Listing {
         photoUrls: (json['photo_urls'] as List<dynamic>? ?? const []).cast<String>(),
         latitude: (json['latitude'] as num?)?.toDouble(),
         longitude: (json['longitude'] as num?)?.toDouble(),
+        soldToName: json['sold_to_name'] as String?,
+        soldToPhone: json['sold_to_phone'] as String?,
       );
 
   /// Round-trips with [fromJson] — used to cache listings locally (e.g. Land Advisor history).
@@ -116,7 +134,7 @@ class Listing {
         'size': sizeSqm,
         'location': location,
         'description': description,
-        'status': status.name,
+        'status': status.wireValue,
         'photo_urls': photoUrls,
         'latitude': latitude,
         'longitude': longitude,
@@ -137,6 +155,8 @@ class Listing {
         isFavorite: isFavorite ?? this.isFavorite,
         latitude: latitude,
         longitude: longitude,
+        soldToName: soldToName,
+        soldToPhone: soldToPhone,
       );
 
   static ListingCategory _categoryFromBackendType(String type) => ListingCategory.values.firstWhere(
