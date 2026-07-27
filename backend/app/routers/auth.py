@@ -29,7 +29,7 @@ def signup(payload: UserCreate, db: Session = Depends(get_db)):
         email=payload.email,
         password_hash=hash_password(payload.password),
         role=UserRole.buyer,
-        status=UserStatus.pending,
+        status=UserStatus.approved,
     )
     db.add(user)
     db.commit()
@@ -96,8 +96,6 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
-    if user.status == UserStatus.pending:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your account is pending owner approval")
     if user.status == UserStatus.rejected:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your account was not approved")
 

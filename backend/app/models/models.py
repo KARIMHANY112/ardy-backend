@@ -57,9 +57,8 @@ class User(Base):
     reset_code_hash = Column(String, nullable=True)
     reset_code_expires_at = Column(DateTime(timezone=True), nullable=True)
 
-    # New signups start pending; existing rows are backfilled to approved by the migration
-    # so current accounts aren't locked out.
-    status = Column(Enum(UserStatus), nullable=False, default=UserStatus.pending, server_default=UserStatus.approved.value)
+    # Signups no longer require owner approval — new rows default straight to approved.
+    status = Column(Enum(UserStatus), nullable=False, default=UserStatus.approved, server_default=UserStatus.approved.value)
     reviewed_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     reviewed_at = Column(DateTime(timezone=True), nullable=True)
 

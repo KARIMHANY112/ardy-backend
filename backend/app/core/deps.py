@@ -63,6 +63,6 @@ def require_buyer(current_user: User = Depends(get_current_user)) -> User:
     can also list a property for sale."""
     if current_user.role != UserRole.buyer:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Buyer access only")
-    if current_user.status != UserStatus.approved:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your account is pending owner approval")
+    if current_user.status == UserStatus.rejected:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your account was not approved")
     return current_user

@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../../models/buy_request.dart';
 import '../../models/listing.dart';
-import '../../models/user.dart';
 import '../../services/listings_repository.dart';
 import '../../state/auth_session.dart';
 import '../../theme/app_theme.dart';
@@ -47,17 +46,6 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
               'Browse listings, chat with the Land Advisor, or post one of your own.',
               style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)),
             ),
-            if (user?.status == AccountStatus.pending) ...[
-              const SizedBox(height: AppSpacing.s12),
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.s12),
-                decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(AppRadii.r12)),
-                child: Text(
-                  'Your account is pending owner approval — you can browse and favorite, but posting a listing is locked until then.',
-                  style: textTheme.bodyMedium?.copyWith(fontSize: 12, color: AppColors.ink.withValues(alpha: 0.7)),
-                ),
-              ),
-            ],
             const SizedBox(height: AppSpacing.s20),
             DashboardLinkCard(
               icon: Icons.home_outlined,

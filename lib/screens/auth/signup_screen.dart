@@ -70,7 +70,6 @@ class _SignupScreenState extends State<SignupScreen> {
         password: _passwordController.text,
       );
       if (!mounted) return;
-      // New signups are always buyers, pending owner approval.
       context.go('/home');
     } on ApiException catch (e) {
       if (!mounted) return;
