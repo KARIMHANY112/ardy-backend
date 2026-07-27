@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../../models/buy_request.dart';
 import '../../models/listing.dart';
 import '../../models/user.dart';
 import '../../services/listings_repository.dart';
 import '../../state/auth_session.dart';
+import '../../state/locale_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_dimens.dart';
 import '../../widgets/app_bottom_nav.dart';
@@ -46,6 +48,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final user = context.watch<AuthSession>().user;
 
     return AppBottomNavScaffold(
@@ -53,7 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const BrandHeader(title: 'Profile', titleSize: 22),
+          BrandHeader(title: l10n.profileTitle, titleSize: 22),
           Container(
             color: Colors.white,
             child: TabBar(
@@ -63,9 +66,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               indicatorColor: AppColors.nileGreen,
               labelStyle: AppFonts.tajawal(size: 13, weight: FontWeight.w700),
               unselectedLabelStyle: AppFonts.tajawal(size: 13, weight: FontWeight.w600),
-              tabs: const [
-                Tab(text: 'Profile'),
-                Tab(text: 'Bought'),
+              tabs: [
+                Tab(text: l10n.profileTitle),
+                Tab(text: l10n.boughtTab),
               ],
             ),
           ),
@@ -84,6 +87,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   Widget _buildProfileTab(BuildContext context, AppUser? user) {
+    final l10n = AppLocalizations.of(context)!;
+    final localeProvider = context.watch<LocaleProvider>();
+    final currentLanguageCode = localeProvider.locale?.languageCode ?? Localizations.localeOf(context).languageCode;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.s18),
       child: Column(
@@ -99,9 +106,29 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(user?.name ?? 'Ardy User', style: AppFonts.cairo(size: 15, weight: FontWeight.w700)),
+                    Text(user?.name ?? 'Ardi User', style: AppFonts.cairo(size: 15, weight: FontWeight.w700)),
                     Text(user?.email ?? '', style: AppFonts.tajawal(size: 13, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6))),
                   ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.s16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s16, vertical: AppSpacing.s10),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadii.r18), boxShadow: AppColors.cardShadow),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(l10n.languageLabel, style: AppFonts.tajawal(size: 14, weight: FontWeight.w600, color: AppColors.ink)),
+                ),
+                SegmentedButton<String>(
+                  segments: [
+                    ButtonSegment(value: 'en', label: Text(l10n.englishLanguageName)),
+                    ButtonSegment(value: 'ar', label: Text(l10n.arabicLanguageName)),
+                  ],
+                  selected: {currentLanguageCode},
+                  onSelectionChanged: (selection) => context.read<LocaleProvider>().setLocale(Locale(selection.first)),
                 ),
               ],
             ),
@@ -124,7 +151,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 children: [
                   const Icon(Icons.logout, color: AppColors.nileGreen, size: 18),
                   const SizedBox(width: AppSpacing.s8),
-                  Text('Log Out', style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: AppColors.nileGreen)),
+                  Text(l10n.logOut, style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: AppColors.nileGreen)),
                 ],
               ),
             ),
@@ -135,6 +162,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   Widget _buildBoughtTab(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return FutureBuilder<List<BuyRequest>>(
       future: _boughtFuture,
       builder: (context, snapshot) {
@@ -144,7 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(
             child: Text(
-              "You haven't bought anything yet",
+              l10n.haventBoughtAnythingYet,
               style: AppFonts.tajawal(size: 13, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)),
             ),
           );
@@ -190,7 +218,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s10, vertical: AppSpacing.s4),
                         decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(AppRadii.r20)),
-                        child: Text('Bought', style: AppFonts.tajawal(size: 12, weight: FontWeight.w700, color: AppColors.nileGreen)),
+                        child: Text(l10n.boughtBadge, style: AppFonts.tajawal(size: 12, weight: FontWeight.w700, color: AppColors.nileGreen)),
                       ),
                     ],
                   ),

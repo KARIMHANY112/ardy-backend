@@ -1,3 +1,6 @@
+import 'package:flutter/widgets.dart';
+
+import '../l10n/generated/app_localizations.dart';
 import 'listing.dart';
 
 /// Mirrors backend app.models.models.BuyRequestStatus.
@@ -11,14 +14,15 @@ BuyRequestStatus _buyRequestStatusFromString(String value) => BuyRequestStatus.v
 extension BuyRequestStatusLabel on BuyRequestStatus {
   /// "Bought" only makes sense from the buyer's own point of view — everyone
   /// else just sees the listing itself as "Sold" (see ListingStatusLabel).
-  String get label {
+  String label(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     switch (this) {
       case BuyRequestStatus.pending:
-        return 'Requested';
+        return l10n.buyRequestStatusRequested;
       case BuyRequestStatus.approved:
-        return 'Bought';
+        return l10n.buyRequestStatusBought;
       case BuyRequestStatus.rejected:
-        return 'Rejected';
+        return l10n.statusRejected;
     }
   }
 }

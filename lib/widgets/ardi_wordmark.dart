@@ -35,6 +35,7 @@ class ArdiWordmark extends StatelessWidget {
           textDirection: TextDirection.rtl,
           style: AppFonts.cairo(size: arabicSize, weight: FontWeight.w700, color: wordmarkColor, height: 1),
         ),
+        SizedBox(height: arabicSize * 0.35),
         Text(
           'A R D I',
           style: AppFonts.tajawal(

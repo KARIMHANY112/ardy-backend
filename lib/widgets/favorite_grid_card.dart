@@ -55,7 +55,7 @@ class FavoriteGridCard extends StatelessWidget {
                   Positioned(
                     top: 8,
                     left: 8,
-                    child: TagBadge.saleStatus(listing.status),
+                    child: TagBadge.saleStatus(context, listing.status),
                   ),
               ],
             ),

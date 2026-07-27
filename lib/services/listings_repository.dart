@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import '../models/buy_request.dart';
 import '../models/listing.dart';
 import 'api_client.dart';
@@ -36,42 +34,6 @@ class ListingsRepository {
   Future<List<BuyRequest>> myBuyRequests() async {
     final data = await api.get('/listings/mine/buy-requests') as List<dynamic>;
     return data.map((json) => BuyRequest.fromJson(json as Map<String, dynamic>)).toList();
-  }
-
-  Future<Listing> create({
-    required String title,
-    required ListingCategory category,
-    required double price,
-    required double size,
-    required String location,
-    required LicenseStatus license,
-    String? description,
-    double? latitude,
-    double? longitude,
-  }) async {
-    final body = <String, dynamic>{
-      'title': title,
-      'type': category.name,
-      'price': price,
-      'size': size,
-      'location': location,
-      'license_status': license.wireValue,
-    };
-    if (description != null && description.isNotEmpty) body['description'] = description;
-    if (latitude != null) body['latitude'] = latitude;
-    if (longitude != null) body['longitude'] = longitude;
-    final data = await api.post('/listings', body: body);
-    return Listing.fromJson(data as Map<String, dynamic>);
-  }
-
-  Future<Listing> uploadPhoto(String listingId, {required Uint8List bytes, required String filename}) async {
-    final data = await api.postMultipart(
-      '/listings/$listingId/photos',
-      fileField: 'file',
-      fileBytes: bytes,
-      filename: filename,
-    );
-    return Listing.fromJson(data as Map<String, dynamic>);
   }
 
   // ---- Owner dashboard ----

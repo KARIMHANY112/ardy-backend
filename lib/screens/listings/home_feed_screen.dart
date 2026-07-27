@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../../models/listing.dart';
 import '../../services/api_client.dart';
 import '../../services/listings_repository.dart';
@@ -36,11 +37,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
   // Filter-chip copy is plural ("Factories") while selectors elsewhere use
   // the singular ListingCategory.label — matches the design handoff's copy.
-  static const _filterLabels = {
-    ListingCategory.factory: 'Factories',
-    ListingCategory.land: 'Land',
-    ListingCategory.shop: 'Shops',
-  };
+  Map<ListingCategory, String> _filterLabels(AppLocalizations l10n) => {
+        ListingCategory.factory: l10n.filterFactories,
+        ListingCategory.land: l10n.filterLand,
+        ListingCategory.shop: l10n.filterShops,
+      };
 
   @override
   void initState() {
@@ -64,7 +65,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   }
 
   Future<void> _openWhatsApp() async {
-    final text = Uri.encodeComponent("Hi, I'd like to list my property on Ardi");
+    final text = Uri.encodeComponent(AppLocalizations.of(context)!.listPropertyWhatsappMessage);
     await launchUrl(Uri.parse('https://wa.me/$_contactPhoneIntl?text=$text'), mode: LaunchMode.externalApplication);
   }
 
@@ -76,6 +77,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final filterLabels = _filterLabels(l10n);
     return AppBottomNavScaffold(
       currentIndex: 0,
       body: Column(
@@ -105,7 +108,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 const SizedBox(height: AppSpacing.s12),
                 ArdiSearchField(
                   controller: _searchController,
-                  hint: 'Search factories, land, shops…',
+                  hint: l10n.searchHint,
                   onChanged: (value) => setState(() => _query = value),
                 ),
                 const SizedBox(height: AppSpacing.s12),
@@ -114,12 +117,12 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     children: [
-                      CategoryPill(label: 'All', selected: _selectedCategory == null, onTap: () => setState(() => _selectedCategory = null)),
+                      CategoryPill(label: l10n.filterAll, selected: _selectedCategory == null, onTap: () => setState(() => _selectedCategory = null)),
                       for (final category in ListingCategory.values)
                         Padding(
                           padding: const EdgeInsets.only(left: AppSpacing.s8),
                           child: CategoryPill(
-                            label: _filterLabels[category]!,
+                            label: filterLabels[category]!,
                             selected: _selectedCategory == category,
                             onTap: () => setState(() => _selectedCategory = category),
                           ),
@@ -138,14 +141,14 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  final message = snapshot.error is ApiException ? (snapshot.error as ApiException).message : 'Could not load listings';
+                  final message = snapshot.error is ApiException ? (snapshot.error as ApiException).message : l10n.couldNotLoadListings;
                   return Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(message, style: AppFonts.tajawal(size: 14, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6))),
                         const SizedBox(height: AppSpacing.s8),
-                        TextButton(onPressed: _refresh, child: const Text('Retry')),
+                        TextButton(onPressed: _refresh, child: Text(l10n.retry)),
                       ],
                     ),
                   );
@@ -159,7 +162,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           children: [
                             Padding(
                               padding: const EdgeInsets.only(top: AppSpacing.s80),
-                              child: Center(child: Text('No listings match', style: AppFonts.tajawal(size: 14, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)))),
+                              child: Center(child: Text(l10n.noListingsMatch, style: AppFonts.tajawal(size: 14, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)))),
                             ),
                           ],
                         )

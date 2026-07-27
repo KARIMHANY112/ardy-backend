@@ -4,6 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../../models/buy_request.dart';
 import '../../models/listing.dart';
 import '../../services/api_client.dart';
@@ -84,7 +85,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
       if (!mounted) return;
       setState(() => _hasRequestedBuy = true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Request sent — call or WhatsApp to arrange the deal')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.requestSentMessage)),
       );
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -103,7 +104,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   }
 
   Future<void> _openWhatsApp(Listing listing) async {
-    final text = Uri.encodeComponent("Hi, I'm interested in listing ${listing.refCode} — ${listing.title}");
+    final text = Uri.encodeComponent(AppLocalizations.of(context)!.interestedInListingWhatsapp(listing.refCode, listing.title));
     await launchUrl(Uri.parse('https://wa.me/$_contactPhoneIntl?text=$text'), mode: LaunchMode.externalApplication);
   }
 
@@ -138,7 +139,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
               return const Center(child: CircularProgressIndicator());
             }
             if (snapshot.hasError) {
-              final message = snapshot.error is ApiException ? (snapshot.error as ApiException).message : 'Could not load this listing';
+              final message = snapshot.error is ApiException ? (snapshot.error as ApiException).message : AppLocalizations.of(context)!.couldNotLoadThisListing;
               return Center(child: Text(message, style: AppFonts.tajawal(size: 14, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6))));
             }
             final listing = snapshot.data!;
@@ -150,6 +151,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   }
 
   Widget _buildBody(BuildContext context, Listing listing) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
           children: [
             Expanded(
@@ -170,10 +172,10 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                         children: [
                           Row(
                             children: [
-                              TagBadge(text: listing.category.label.toUpperCase(), color: AppColors.deepGreen),
+                              TagBadge(text: listing.category.label(context).toUpperCase(), color: AppColors.deepGreen),
                               if (listing.status == ListingStatus.papersPending) ...[
                                 const SizedBox(width: AppSpacing.s8),
-                                const TagBadge(text: 'PENDING SALE', color: AppColors.pendingAmber),
+                                TagBadge(text: l10n.pendingSaleBadge, color: AppColors.pendingAmber),
                               ],
                             ],
                           ),
@@ -190,7 +192,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                               if (listing.sizeSqm > 0) ...[
                                 const SizedBox(width: AppSpacing.s8),
                                 Text(
-                                  '${formatEgp((listing.price / listing.sizeSqm).round())}/sqm',
+                                  '${formatEgp((listing.price / listing.sizeSqm).round())}/${l10n.sqmSuffix}',
                                   style: AppFonts.tajawal(size: 13, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)),
                                 ),
                               ],
@@ -207,20 +209,20 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                             crossAxisSpacing: 10,
                             childAspectRatio: 2.6,
                             children: [
-                              ListingFactCell(label: 'Area', value: formatSqm(listing.sizeSqm)),
-                              ListingFactCell(label: 'License', value: listing.license.label),
-                              ListingFactCell(label: 'Type', value: listing.category.label),
+                              ListingFactCell(label: l10n.areaLabel, value: formatSqm(listing.sizeSqm, l10n.sqmSuffix)),
+                              ListingFactCell(label: l10n.licenseFactLabel, value: listing.license.label(context)),
+                              ListingFactCell(label: l10n.typeFactLabel, value: listing.category.label(context)),
                               // No "built year" field on the backend yet — ref code fills the
                               // fourth cell the design reserves for that fact.
-                              ListingFactCell(label: 'Ref Code', value: listing.refCode),
+                              ListingFactCell(label: l10n.refCodeFactLabel, value: listing.refCode),
                             ],
                           ),
                           const SizedBox(height: AppSpacing.s20),
-                          Text('Description', style: AppFonts.cairo(size: 14, weight: FontWeight.w700)),
+                          Text(l10n.descriptionLabel, style: AppFonts.cairo(size: 14, weight: FontWeight.w700)),
                           const SizedBox(height: AppSpacing.s6),
                           Text(listing.description, style: AppFonts.tajawal(size: 13, weight: FontWeight.w400, color: AppColors.ink, height: 1.6)),
                           const SizedBox(height: AppSpacing.s20),
-                          Text('Location', style: AppFonts.cairo(size: 14, weight: FontWeight.w700)),
+                          Text(l10n.locationLabel, style: AppFonts.cairo(size: 14, weight: FontWeight.w700)),
                           const SizedBox(height: AppSpacing.s6),
                           if (listing.hasCoordinates) ...[
                             ClipRRect(
@@ -248,7 +250,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                             GestureDetector(
                               onTap: () => _openInGoogleMaps(listing),
                               child: Text(
-                                'Open in Google Maps',
+                                l10n.openInGoogleMaps,
                                 style: AppFonts.tajawal(size: 13, weight: FontWeight.w700, color: AppColors.gold),
                               ),
                             ),
@@ -260,7 +262,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                               child: const Center(child: Icon(Icons.map_outlined, color: AppColors.divider, size: 32)),
                             ),
                           const SizedBox(height: AppSpacing.s16),
-                          const AgentInfoCard(name: 'Mostafa Adel', subtitle: 'Listing agent · ARDI verified'),
+                          AgentInfoCard(name: 'Mostafa Adel', subtitle: l10n.listingAgentSubtitle),
                         ],
                       ),
                     ),
@@ -286,7 +288,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   border: Border(top: BorderSide(color: AppColors.divider)),
                 ),
                 child: Text(
-                  'This listing has been sold',
+                  l10n.listingSoldMessage,
                   textAlign: TextAlign.center,
                   style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: AppColors.ink),
                 ),

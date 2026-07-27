@@ -58,16 +58,6 @@ class ApiClient {
     return _handle(res);
   }
 
-  /// multipart/form-data POST for file uploads (e.g. listing photos).
-  Future<dynamic> postMultipart(String path, {required String fileField, required List<int> fileBytes, required String filename}) async {
-    final request = http.MultipartRequest('POST', _uri(path));
-    if (token != null) request.headers['Authorization'] = 'Bearer $token';
-    request.files.add(http.MultipartFile.fromBytes(fileField, fileBytes, filename: filename));
-    final streamed = await request.send();
-    final res = await http.Response.fromStream(streamed);
-    return _handle(res);
-  }
-
   Future<dynamic> delete(String path) async {
     final res = await http.delete(_uri(path), headers: _headers);
     return _handle(res);

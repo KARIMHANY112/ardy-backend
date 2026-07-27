@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+import 'l10n/generated/app_localizations.dart';
 import 'routes/app_router.dart';
 import 'services/advisor_repository.dart';
 import 'services/favorites_repository.dart';
 import 'services/listings_repository.dart';
 import 'state/advisor_chat_session.dart';
 import 'state/auth_session.dart';
+import 'state/locale_provider.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -31,12 +34,14 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late final AuthSession _session;
+  late final LocaleProvider _localeProvider;
   late final GoRouter _router;
 
   @override
   void initState() {
     super.initState();
     _session = AuthSession();
+    _localeProvider = LocaleProvider()..load();
     // refreshListenable re-runs the router's redirect whenever the session
     // changes (login/logout), without tearing down navigation state.
     _router = buildAppRouter(_session);
@@ -53,16 +58,27 @@ class _MyAppState extends State<MyApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: _session),
+        ChangeNotifierProvider.value(value: _localeProvider),
         Provider(create: (_) => ListingsRepository(_session.api)),
         Provider(create: (_) => FavoritesRepository(_session.api)),
         Provider(create: (_) => AdvisorRepository(_session.api)),
         ChangeNotifierProvider(create: (_) => AdvisorChatSession()),
       ],
-      child: MaterialApp.router(
-        title: 'ARDI',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        routerConfig: _router,
+      child: Consumer<LocaleProvider>(
+        builder: (context, localeProvider, _) => MaterialApp.router(
+          title: 'ARDI',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          routerConfig: _router,
+          locale: localeProvider.locale,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+        ),
       ),
     );
   }

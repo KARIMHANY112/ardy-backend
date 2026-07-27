@@ -24,4 +24,4 @@ String formatEgp(num value) {
   return 'EGP ${formatThousands(value)}';
 }
 
-String formatSqm(num value) => '${formatThousands(value)} sqm';
+String formatSqm(num value, String unit) => '${formatThousands(value)} $unit';

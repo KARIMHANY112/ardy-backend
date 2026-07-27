@@ -37,7 +37,7 @@ class ArdiLogoCard extends StatelessWidget {
             textDirection: TextDirection.rtl,
             style: AppFonts.cairo(size: 34, weight: FontWeight.w800, color: wordmarkColor, height: 1),
           ),
-          const SizedBox(height: AppSpacing.s6),
+          const SizedBox(height: AppSpacing.s16),
           Text(
             'A R D I',
             style: AppFonts.tajawal(size: 13, weight: FontWeight.w600, color: AppColors.gold, letterSpacing: 4),

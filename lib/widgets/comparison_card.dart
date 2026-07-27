@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../l10n/generated/app_localizations.dart';
 import '../models/listing.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_dimens.dart';
@@ -23,7 +24,7 @@ class ComparisonCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Comparing ${listings.length} listings', style: AppFonts.cairo(size: 12, weight: FontWeight.w700)),
+          Text(AppLocalizations.of(context)!.comparingListings(listings.length), style: AppFonts.cairo(size: 12, weight: FontWeight.w700)),
           const SizedBox(height: AppSpacing.s8),
           SizedBox(
             height: 124,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../../services/advisor_repository.dart';
 import '../../services/api_client.dart';
 import '../../state/advisor_chat_session.dart';
@@ -41,14 +42,15 @@ class _LandAdvisorScreenState extends State<LandAdvisorScreen> {
     setState(() => _sending = true);
     _scrollToEnd();
 
+    final l10n = AppLocalizations.of(context)!;
     try {
       final response = await context.read<AdvisorRepository>().ask(text, conversationId: chat.conversationId);
       chat.conversationId = response.conversationId;
       chat.addMessage(ChatMessage(text: response.reply, fromUser: false, matches: response.matches));
     } on ApiException catch (e) {
-      chat.addMessage(ChatMessage(text: "Couldn't reach the Land Advisor: ${e.message}", fromUser: false));
+      chat.addMessage(ChatMessage(text: l10n.couldNotReachAdvisor(e.message), fromUser: false));
     } catch (_) {
-      chat.addMessage(ChatMessage(text: "Couldn't reach the Land Advisor: no connection.", fromUser: false));
+      chat.addMessage(ChatMessage(text: l10n.couldNotReachAdvisorNoConnection, fromUser: false));
     } finally {
       if (mounted) setState(() => _sending = false);
       _scrollToEnd();
@@ -71,13 +73,14 @@ class _LandAdvisorScreenState extends State<LandAdvisorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final messages = context.watch<AdvisorChatSession>().messages;
     return AppBottomNavScaffold(
       currentIndex: 2,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const BrandHeader(title: 'Land Advisor', subtitle: 'AI assistant · compares listings for you', dark: true, titleSize: 18),
+          BrandHeader(title: l10n.landAdvisorTitle, subtitle: l10n.landAdvisorSubtitle, dark: true, titleSize: 18),
           Expanded(
             child: ListView.separated(
               controller: _scrollController,
@@ -86,7 +89,7 @@ class _LandAdvisorScreenState extends State<LandAdvisorScreen> {
               separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.s12),
               itemBuilder: (context, index) {
                 if (index == messages.length) {
-                  return const ChatBubble(text: 'Thinking…', fromUser: false);
+                  return ChatBubble(text: l10n.thinking, fromUser: false);
                 }
                 final message = messages[index];
                 if (message.matches.isEmpty) {

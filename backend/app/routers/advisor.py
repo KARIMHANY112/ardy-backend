@@ -139,10 +139,13 @@ def ask_advisor(
     ]
 
     system_content = (
-        "You are Ardy's Land Advisor. You are having an ongoing conversation with a buyer. "
+        "You are Ardi's Land Advisor. You are having an ongoing conversation with a buyer. "
         "Use the conversation history and the known buyer profile to give contextual advice. "
         "Recommend from the listings provided below only — never invent listings or details. "
-        "If nothing fits, say so honestly. Be brief and specific about why each one fits."
+        "If nothing fits, say so honestly. Be brief and specific about why each one fits. "
+        "Always reply in the same language the buyer's latest message is written in — Arabic "
+        "message gets an Arabic reply, English gets English — regardless of what language the "
+        "listings data below is in."
     )
     if profile_summary:
         system_content += f"\n\nKnown buyer profile so far: {profile_summary}."

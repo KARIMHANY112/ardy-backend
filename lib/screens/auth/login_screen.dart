@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../../models/user.dart';
 import '../../services/api_client.dart';
 import '../../state/auth_session.dart';
@@ -33,10 +34,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
+    final l10n = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter your email and password')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.enterEmailAndPassword)));
       return;
     }
 
@@ -51,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Something went wrong: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.somethingWentWrong(e.toString()))));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -59,6 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -69,30 +72,30 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const ArdiLogoCard(light: false),
               const SizedBox(height: AppSpacing.s20),
-              Text('Welcome back', textAlign: TextAlign.center, style: AppFonts.cairo(size: 24, weight: FontWeight.w700)),
+              Text(l10n.welcomeBack, textAlign: TextAlign.center, style: AppFonts.cairo(size: 24, weight: FontWeight.w700)),
               const SizedBox(height: AppSpacing.s20),
-              LabeledInputField(label: 'Phone or email', controller: _emailController),
+              LabeledInputField(label: l10n.phoneOrEmail, controller: _emailController),
               const SizedBox(height: AppSpacing.s12),
-              LabeledInputField(label: 'Password', controller: _passwordController, obscureText: true),
+              LabeledInputField(label: l10n.password, controller: _passwordController, obscureText: true),
               const SizedBox(height: AppSpacing.s8),
               Align(
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
                   onTap: () => context.go('/forgot-password'),
-                  child: Text('Forgot password?', style: AppFonts.tajawal(size: 12, weight: FontWeight.w600, color: AppColors.gold)),
+                  child: Text(l10n.forgotPassword, style: AppFonts.tajawal(size: 12, weight: FontWeight.w600, color: AppColors.gold)),
                 ),
               ),
               const SizedBox(height: AppSpacing.s8),
-              PrimaryButton(label: 'Log In', onPressed: _login, loading: _submitting),
+              PrimaryButton(label: l10n.logIn, onPressed: _login, loading: _submitting),
               const SizedBox(height: AppSpacing.s16),
               Center(
                 child: GestureDetector(
                   onTap: () => context.go('/signup'),
                   child: Text.rich(
                     TextSpan(
-                      text: 'New to ARDI? ',
+                      text: l10n.newToArdiPrefix,
                       style: AppFonts.tajawal(size: 12, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)),
-                      children: [TextSpan(text: 'Create account', style: AppFonts.tajawal(size: 12, weight: FontWeight.w700, color: AppColors.gold))],
+                      children: [TextSpan(text: l10n.createAccount, style: AppFonts.tajawal(size: 12, weight: FontWeight.w700, color: AppColors.gold))],
                     ),
                   ),
                 ),

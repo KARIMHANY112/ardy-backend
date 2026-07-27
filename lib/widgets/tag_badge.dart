@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/generated/app_localizations.dart';
 import '../models/listing.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_dimens.dart';
@@ -14,25 +15,26 @@ class TagBadge extends StatelessWidget {
 
   /// Recolors per the design handoff: licensed = deep green, pending = amber,
   /// n/a = muted ink.
-  factory TagBadge.license(LicenseStatus status) {
+  factory TagBadge.license(BuildContext context, LicenseStatus status) {
     final color = switch (status) {
       LicenseStatus.licensed => AppColors.deepGreen,
       LicenseStatus.pending => AppColors.pendingAmber,
       LicenseStatus.notApplicable => AppColors.inkAlpha(0.6),
     };
-    return TagBadge(text: status.label, color: color);
+    return TagBadge(text: status.label(context), color: color);
   }
 
   /// The selling status shown on browse cards — available (live), papers
   /// pending, or sold. Distinct from [license], which is about the property's
   /// registration paperwork, not whether it's for sale.
-  factory TagBadge.saleStatus(ListingStatus status) {
+  factory TagBadge.saleStatus(BuildContext context, ListingStatus status) {
+    final l10n = AppLocalizations.of(context)!;
     final (text, color) = switch (status) {
-      ListingStatus.live => ('AVAILABLE', AppColors.nileGreen),
-      ListingStatus.papersPending => ('PAPERS PENDING', AppColors.pendingAmber),
-      ListingStatus.sold => ('SOLD', AppColors.ink),
-      ListingStatus.pending => ('PENDING REVIEW', AppColors.pendingAmber),
-      ListingStatus.rejected => ('REJECTED', Colors.redAccent),
+      ListingStatus.live => (l10n.saleStatusAvailable, AppColors.nileGreen),
+      ListingStatus.papersPending => (l10n.saleStatusPapersPending, AppColors.pendingAmber),
+      ListingStatus.sold => (l10n.saleStatusSold, AppColors.ink),
+      ListingStatus.pending => (l10n.saleStatusPendingReview, AppColors.pendingAmber),
+      ListingStatus.rejected => (l10n.saleStatusRejected, Colors.redAccent),
     };
     return TagBadge(text: text, color: color);
   }

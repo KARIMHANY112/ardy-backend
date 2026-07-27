@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../../models/user.dart';
 import '../../services/api_client.dart';
 import '../../state/auth_session.dart';
@@ -38,9 +39,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _requestCode() async {
+    final l10n = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
     if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter your email')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.enterYourEmail)));
       return;
     }
 
@@ -49,23 +51,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       await context.read<AuthSession>().requestPasswordReset(email);
       if (!mounted) return;
       setState(() => _codeSent = true);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('If that email is registered, a code was sent')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.codeSentIfRegistered)));
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Something went wrong: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.somethingWentWrong(e.toString()))));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
   }
 
   Future<void> _resetPassword() async {
+    final l10n = AppLocalizations.of(context)!;
     final code = _codeController.text.trim();
     final newPassword = _newPasswordController.text;
     if (code.isEmpty || newPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter the code and a new password')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.enterCodeAndNewPassword)));
       return;
     }
 
@@ -80,7 +83,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Something went wrong: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.somethingWentWrong(e.toString()))));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -88,6 +91,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -106,24 +110,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               const SizedBox(height: AppSpacing.s16),
               const ArdiLogoCard(light: false),
               const SizedBox(height: AppSpacing.s20),
-              Text('Reset password', textAlign: TextAlign.center, style: AppFonts.cairo(size: 24, weight: FontWeight.w700)),
+              Text(l10n.resetPasswordTitle, textAlign: TextAlign.center, style: AppFonts.cairo(size: 24, weight: FontWeight.w700)),
               const SizedBox(height: AppSpacing.s8),
               Text(
-                _codeSent ? 'Enter the code we sent to ${_emailController.text.trim()} and choose a new password.' : "Enter your email and we'll send you a reset code.",
+                _codeSent ? l10n.enterCodeSentTo(_emailController.text.trim()) : l10n.enterEmailForResetInstructions,
                 textAlign: TextAlign.center,
                 style: AppFonts.tajawal(size: 13, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)),
               ),
               const SizedBox(height: AppSpacing.s20),
-              LabeledInputField(label: 'Email', controller: _emailController, keyboardType: TextInputType.emailAddress),
+              LabeledInputField(label: l10n.email, controller: _emailController, keyboardType: TextInputType.emailAddress),
               if (_codeSent) ...[
                 const SizedBox(height: AppSpacing.s12),
-                LabeledInputField(label: 'Reset code', controller: _codeController, keyboardType: TextInputType.number),
+                LabeledInputField(label: l10n.resetCode, controller: _codeController, keyboardType: TextInputType.number),
                 const SizedBox(height: AppSpacing.s12),
-                LabeledInputField(label: 'New password', controller: _newPasswordController, obscureText: true),
+                LabeledInputField(label: l10n.newPassword, controller: _newPasswordController, obscureText: true),
               ],
               const SizedBox(height: AppSpacing.s20),
               PrimaryButton(
-                label: _codeSent ? 'Reset password' : 'Send reset code',
+                label: _codeSent ? l10n.resetPasswordTitle : l10n.sendResetCode,
                 onPressed: _codeSent ? _resetPassword : _requestCode,
                 loading: _submitting,
               ),
@@ -132,7 +136,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 Center(
                   child: GestureDetector(
                     onTap: _submitting ? null : _requestCode,
-                    child: Text("Didn't get a code? Resend", style: AppFonts.tajawal(size: 12, weight: FontWeight.w600, color: AppColors.gold)),
+                    child: Text(l10n.didntGetCodeResend, style: AppFonts.tajawal(size: 12, weight: FontWeight.w600, color: AppColors.gold)),
                   ),
                 ),
               ],

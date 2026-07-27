@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../../models/buy_request.dart';
 import '../../models/listing.dart';
 import '../../services/api_client.dart';
@@ -44,17 +45,18 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
   Future<void> _whatsAppBuyer(String phone, String listingTitle) async {
     final digits = phone.replaceAll(RegExp(r'\D'), '');
     final intl = digits.startsWith('0') ? '20${digits.substring(1)}' : digits;
-    final text = Uri.encodeComponent("Hi, following up on your interest in $listingTitle");
+    final text = Uri.encodeComponent(AppLocalizations.of(context)!.followUpWhatsappMessage(listingTitle));
     await launchUrl(Uri.parse('https://wa.me/$intl?text=$text'), mode: LaunchMode.externalApplication);
   }
 
   Future<void> _reviewBuyRequest(String requestId, {required bool approve}) async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _busyIds.add(requestId));
     try {
       await context.read<ListingsRepository>().reviewBuyRequest(requestId, approve: approve);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(approve ? 'Papers pending for this buyer' : 'Buy request rejected')),
+        SnackBar(content: Text(approve ? l10n.papersPendingForBuyer : l10n.buyRequestRejectedMessage)),
       );
       setState(_load);
     } on ApiException catch (e) {
@@ -66,11 +68,12 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
   }
 
   Future<void> _finalizeSale(String listingId) async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _busyIds.add(listingId));
     try {
       await context.read<ListingsRepository>().finalizeSale(listingId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sale finalized')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.saleFinalizedMessage)));
       setState(_load);
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -81,11 +84,12 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
   }
 
   Future<void> _revertToLive(String listingId) async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _busyIds.add(listingId));
     try {
       await context.read<ListingsRepository>().revertToLive(listingId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listing back on the market')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.listingBackOnMarketMessage)));
       setState(_load);
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -97,11 +101,12 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Owner Dashboard'),
+        title: Text(l10n.ownerDashboardTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -123,10 +128,10 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             children: [
               FutureBuilder<List<Listing>>(
                 future: _liveFuture,
-                builder: (context, snapshot) => _StatCard(label: 'Live Listings', value: snapshot.hasData ? '${snapshot.data!.length}' : '—'),
+                builder: (context, snapshot) => _StatCard(label: l10n.liveListingsLabel, value: snapshot.hasData ? '${snapshot.data!.length}' : '—'),
               ),
               const SizedBox(height: AppSpacing.s24),
-              Text('Buy Requests', style: textTheme.titleLarge),
+              Text(l10n.buyRequestsTitle, style: textTheme.titleLarge),
               const SizedBox(height: AppSpacing.s12),
               FutureBuilder<List<BuyRequest>>(
                 future: _buyRequestsFuture,
@@ -135,12 +140,12 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                     return const Padding(padding: EdgeInsets.symmetric(vertical: AppSpacing.s16), child: Center(child: CircularProgressIndicator()));
                   }
                   if (snapshot.hasError) {
-                    final message = snapshot.error is ApiException ? (snapshot.error as ApiException).message : 'Could not load buy requests';
+                    final message = snapshot.error is ApiException ? (snapshot.error as ApiException).message : l10n.couldNotLoadBuyRequests;
                     return Text(message, style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)));
                   }
                   final requests = snapshot.data!;
                   if (requests.isEmpty) {
-                    return Text('No buy requests awaiting review', style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)));
+                    return Text(l10n.noBuyRequestsAwaitingReview, style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)));
                   }
                   return Column(
                     children: [
@@ -164,14 +169,14 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                                     Expanded(
                                       child: OutlinedButton(
                                         onPressed: () => _callBuyer(request.buyerPhone!),
-                                        child: const Text('Call'),
+                                        child: Text(l10n.call),
                                       ),
                                     ),
                                     const SizedBox(width: AppSpacing.s12),
                                     Expanded(
                                       child: OutlinedButton(
                                         onPressed: () => _whatsAppBuyer(request.buyerPhone!, request.listing.title),
-                                        child: const Text('WhatsApp'),
+                                        child: Text(l10n.whatsapp),
                                       ),
                                     ),
                                   ],
@@ -182,14 +187,14 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                                     Expanded(
                                       child: OutlinedButton(
                                         onPressed: _busyIds.contains(request.id) ? null : () => _reviewBuyRequest(request.id, approve: false),
-                                        child: const Text('Reject'),
+                                        child: Text(l10n.reject),
                                       ),
                                     ),
                                     const SizedBox(width: AppSpacing.s12),
                                     Expanded(
                                       child: ElevatedButton(
                                         onPressed: _busyIds.contains(request.id) ? null : () => _reviewBuyRequest(request.id, approve: true),
-                                        child: const Text('Approve (papers pending)'),
+                                        child: Text(l10n.approvePapersPending),
                                       ),
                                     ),
                                   ],
@@ -203,7 +208,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                 },
               ),
               const SizedBox(height: AppSpacing.s24),
-              Text('Papers Pending', style: textTheme.titleLarge),
+              Text(l10n.papersPendingTitle, style: textTheme.titleLarge),
               const SizedBox(height: AppSpacing.s12),
               FutureBuilder<List<Listing>>(
                 future: _papersPendingFuture,
@@ -212,12 +217,12 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                     return const Padding(padding: EdgeInsets.symmetric(vertical: AppSpacing.s16), child: Center(child: CircularProgressIndicator()));
                   }
                   if (snapshot.hasError) {
-                    final message = snapshot.error is ApiException ? (snapshot.error as ApiException).message : 'Could not load papers-pending listings';
+                    final message = snapshot.error is ApiException ? (snapshot.error as ApiException).message : l10n.couldNotLoadPapersPending;
                     return Text(message, style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)));
                   }
                   final listings = snapshot.data!;
                   if (listings.isEmpty) {
-                    return Text('No sales awaiting paperwork', style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)));
+                    return Text(l10n.noSalesAwaitingPaperwork, style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)));
                   }
                   return Column(
                     children: [
@@ -232,7 +237,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                                 Text(listing.title, style: textTheme.titleMedium),
                                 const SizedBox(height: AppSpacing.s4),
                                 Text(
-                                  'Buyer: ${listing.soldToName ?? '—'} · ${listing.soldToPhone ?? '—'}',
+                                  l10n.buyerInfoLabel(listing.soldToName ?? '—', listing.soldToPhone ?? '—'),
                                   style: textTheme.bodyMedium?.copyWith(color: AppColors.ink.withValues(alpha: 0.6)),
                                 ),
                                 const SizedBox(height: AppSpacing.s12),
@@ -241,14 +246,14 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                                     Expanded(
                                       child: OutlinedButton(
                                         onPressed: _busyIds.contains(listing.id) ? null : () => _revertToLive(listing.id),
-                                        child: const Text('Deal Fell Through'),
+                                        child: Text(l10n.dealFellThrough),
                                       ),
                                     ),
                                     const SizedBox(width: AppSpacing.s12),
                                     Expanded(
                                       child: ElevatedButton(
                                         onPressed: _busyIds.contains(listing.id) ? null : () => _finalizeSale(listing.id),
-                                        child: const Text('Finalize Sale'),
+                                        child: Text(l10n.finalizeSale),
                                       ),
                                     ),
                                   ],

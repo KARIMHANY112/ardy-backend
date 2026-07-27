@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../../models/listing.dart';
 import '../../services/api_client.dart';
 import '../../services/favorites_repository.dart';
@@ -25,11 +26,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   ListingCategory? _selectedCategory;
   late Future<List<Listing>> _favoritesFuture;
 
-  static const _filterLabels = {
-    ListingCategory.factory: 'Factories',
-    ListingCategory.land: 'Land',
-    ListingCategory.shop: 'Shops',
-  };
+  Map<ListingCategory, String> _filterLabels(AppLocalizations l10n) => {
+        ListingCategory.factory: l10n.filterFactories,
+        ListingCategory.land: l10n.filterLand,
+        ListingCategory.shop: l10n.filterShops,
+      };
 
   @override
   void initState() {
@@ -55,6 +56,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final filterLabels = _filterLabels(l10n);
     return AppBottomNavScaffold(
       currentIndex: 1,
       body: Column(
@@ -66,19 +69,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const BrandHeader(title: 'Favorites', titleSize: 22),
+                BrandHeader(title: l10n.favoritesTitle, titleSize: 22),
                 const SizedBox(height: AppSpacing.s12),
                 SizedBox(
                   height: 32,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     children: [
-                      CategoryPill(label: 'All', selected: _selectedCategory == null, onTap: () => setState(() => _selectedCategory = null)),
+                      CategoryPill(label: l10n.filterAll, selected: _selectedCategory == null, onTap: () => setState(() => _selectedCategory = null)),
                       for (final category in ListingCategory.values)
                         Padding(
                           padding: const EdgeInsets.only(left: AppSpacing.s8),
                           child: CategoryPill(
-                            label: _filterLabels[category]!,
+                            label: filterLabels[category]!,
                             selected: _selectedCategory == category,
                             onTap: () => setState(() => _selectedCategory = category),
                           ),
@@ -97,13 +100,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  final message = snapshot.error is ApiException ? (snapshot.error as ApiException).message : 'Could not load favorites';
+                  final message = snapshot.error is ApiException ? (snapshot.error as ApiException).message : l10n.couldNotLoadFavorites;
                   return Center(child: Text(message, style: AppFonts.tajawal(size: 14, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6))));
                 }
 
                 final favorites = snapshot.data!.where((l) => _selectedCategory == null || l.category == _selectedCategory).toList();
                 if (favorites.isEmpty) {
-                  return Center(child: Text('No saved listings yet', style: AppFonts.tajawal(size: 14, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6))));
+                  return Center(child: Text(l10n.noSavedListingsYet, style: AppFonts.tajawal(size: 14, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6))));
                 }
                 return GridView.builder(
                   padding: const EdgeInsets.all(AppSpacing.s18),
@@ -121,7 +124,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       onTap: listing.status == ListingStatus.live
                           ? () => context.push('/listing/${listing.id}')
                           : () => ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('${listing.title} is ${listing.status.label.toLowerCase()}')),
+                                SnackBar(content: Text(l10n.listingStatusMessage(listing.title, listing.status.label(context).toLowerCase()))),
                               ),
                       onFavoriteToggle: () => _removeFavorite(listing.id),
                     );

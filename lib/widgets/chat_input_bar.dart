@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/generated/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_dimens.dart';
 
@@ -27,7 +28,7 @@ class ChatInputBar extends StatelessWidget {
                 onSubmitted: (_) => onSend(),
                 style: AppFonts.tajawal(size: 13, weight: FontWeight.w400, color: AppColors.ink),
                 decoration: InputDecoration(
-                  hintText: 'Ask about a plot, price range…',
+                  hintText: AppLocalizations.of(context)!.askAboutListingsHint,
                   hintStyle: AppFonts.tajawal(size: 13, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)),
                   border: InputBorder.none,
                   isDense: true,

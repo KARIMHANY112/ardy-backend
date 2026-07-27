@@ -1,15 +1,20 @@
+import 'package:flutter/widgets.dart';
+
+import '../l10n/generated/app_localizations.dart';
+
 /// Mirrors backend app.schemas.schemas.ListingOut, trimmed for UI stubbing.
 enum ListingCategory { factory, land, shop }
 
 extension ListingCategoryLabel on ListingCategory {
-  String get label {
+  String label(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     switch (this) {
       case ListingCategory.factory:
-        return 'Factory';
+        return l10n.categoryFactory;
       case ListingCategory.land:
-        return 'Land';
+        return l10n.categoryLand;
       case ListingCategory.shop:
-        return 'Shop';
+        return l10n.categoryShop;
     }
   }
 }
@@ -17,14 +22,15 @@ extension ListingCategoryLabel on ListingCategory {
 enum LicenseStatus { licensed, pending, notApplicable }
 
 extension LicenseStatusLabel on LicenseStatus {
-  String get label {
+  String label(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     switch (this) {
       case LicenseStatus.licensed:
-        return 'Licensed';
+        return l10n.licenseLicensed;
       case LicenseStatus.pending:
-        return 'Pending';
+        return l10n.licensePending;
       case LicenseStatus.notApplicable:
-        return 'N/A';
+        return l10n.licenseNotApplicable;
     }
   }
 }
@@ -49,18 +55,19 @@ LicenseStatus _licenseStatusFromString(String value) => LicenseStatus.values.fir
 enum ListingStatus { pending, live, papersPending, rejected, sold }
 
 extension ListingStatusLabel on ListingStatus {
-  String get label {
+  String label(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     switch (this) {
       case ListingStatus.pending:
-        return 'Pending review';
+        return l10n.statusPendingReview;
       case ListingStatus.live:
-        return 'Live';
+        return l10n.statusLive;
       case ListingStatus.papersPending:
-        return 'Papers Pending';
+        return l10n.statusPapersPending;
       case ListingStatus.rejected:
-        return 'Rejected';
+        return l10n.statusRejected;
       case ListingStatus.sold:
-        return 'Sold';
+        return l10n.statusSold;
     }
   }
 }

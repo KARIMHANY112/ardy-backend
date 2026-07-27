@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/generated/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_dimens.dart';
 
@@ -25,6 +26,7 @@ class DetailCtaBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.fromLTRB(AppSpacing.s18, AppSpacing.s12, AppSpacing.s18, AppSpacing.s16),
       decoration: const BoxDecoration(
@@ -54,7 +56,7 @@ class DetailCtaBar extends StatelessWidget {
                   height: 48,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(color: AppColors.nileGreen, borderRadius: BorderRadius.circular(AppRadii.r14)),
-                  child: Text('Request to Buy', style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: Colors.white)),
+                  child: Text(l10n.requestToBuy, style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: Colors.white)),
                 ),
               ),
             )
@@ -70,7 +72,7 @@ class DetailCtaBar extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadii.r14),
                     border: Border.all(color: AppColors.deepGreen, width: 1.5),
                   ),
-                  child: Text('Call', style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: AppColors.deepGreen)),
+                  child: Text(l10n.call, style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: AppColors.deepGreen)),
                 ),
               ),
             ),
@@ -82,7 +84,7 @@ class DetailCtaBar extends StatelessWidget {
                   height: 48,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(color: AppColors.nileGreen, borderRadius: BorderRadius.circular(AppRadii.r14)),
-                  child: Text('WhatsApp', style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: Colors.white)),
+                  child: Text(l10n.whatsapp, style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: Colors.white)),
                 ),
               ),
             ),

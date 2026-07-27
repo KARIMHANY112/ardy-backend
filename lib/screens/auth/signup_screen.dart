@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../../services/api_client.dart';
 import '../../state/auth_session.dart';
 import '../../theme/app_theme.dart';
@@ -48,15 +49,16 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _signUp() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_nameController.text.trim().isEmpty ||
         _phoneController.text.trim().isEmpty ||
         _emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fill in all fields')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fillInAllFields)));
       return;
     }
     if (!_acceptedTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please accept the Terms & Privacy Policy')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.acceptTermsPrompt)));
       return;
     }
 
@@ -76,7 +78,7 @@ class _SignupScreenState extends State<SignupScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Something went wrong: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.somethingWentWrong(e.toString()))));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -84,6 +86,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -94,7 +97,7 @@ class _SignupScreenState extends State<SignupScreen> {
             children: [
               const ArdiLogoCard(),
               const SizedBox(height: AppSpacing.s20),
-              Text('Create your account', textAlign: TextAlign.center, style: AppFonts.cairo(size: 24, weight: FontWeight.w700)),
+              Text(l10n.createYourAccount, textAlign: TextAlign.center, style: AppFonts.cairo(size: 24, weight: FontWeight.w700)),
               const SizedBox(height: AppSpacing.s4),
               Text(
                 'مصنعك · أرضك · محلك',
@@ -103,13 +106,13 @@ class _SignupScreenState extends State<SignupScreen> {
                 style: AppFonts.tajawal(size: 12, weight: FontWeight.w400, color: AppColors.gold),
               ),
               const SizedBox(height: AppSpacing.s20),
-              LabeledInputField(label: 'Full name', controller: _nameController),
+              LabeledInputField(label: l10n.fullName, controller: _nameController),
               const SizedBox(height: AppSpacing.s12),
-              LabeledInputField(label: 'Phone number', controller: _phoneController, keyboardType: TextInputType.phone),
+              LabeledInputField(label: l10n.phoneNumber, controller: _phoneController, keyboardType: TextInputType.phone),
               const SizedBox(height: AppSpacing.s12),
-              LabeledInputField(label: 'Email', controller: _emailController, keyboardType: TextInputType.emailAddress),
+              LabeledInputField(label: l10n.email, controller: _emailController, keyboardType: TextInputType.emailAddress),
               const SizedBox(height: AppSpacing.s12),
-              LabeledInputField(label: 'Password', controller: _passwordController, obscureText: true),
+              LabeledInputField(label: l10n.password, controller: _passwordController, obscureText: true),
               const SizedBox(height: AppSpacing.s14),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,15 +138,15 @@ class _SignupScreenState extends State<SignupScreen> {
                       TextSpan(
                         style: AppFonts.tajawal(size: 11, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)),
                         children: [
-                          const TextSpan(text: 'I agree to the '),
+                          TextSpan(text: l10n.agreeToThePrefix),
                           TextSpan(
-                            text: 'Terms',
+                            text: l10n.termsLabel,
                             style: AppFonts.tajawal(size: 11, weight: FontWeight.w700, color: AppColors.gold),
                             recognizer: _termsTap,
                           ),
-                          const TextSpan(text: ' & '),
+                          TextSpan(text: l10n.andConnector),
                           TextSpan(
-                            text: 'Privacy Policy',
+                            text: l10n.privacyPolicyLabel,
                             style: AppFonts.tajawal(size: 11, weight: FontWeight.w700, color: AppColors.gold),
                             recognizer: _privacyTap,
                           ),
@@ -154,16 +157,16 @@ class _SignupScreenState extends State<SignupScreen> {
                 ],
               ),
               const SizedBox(height: AppSpacing.s14),
-              PrimaryButton(label: 'Sign Up', onPressed: _signUp, loading: _submitting),
+              PrimaryButton(label: l10n.signUp, onPressed: _signUp, loading: _submitting),
               const SizedBox(height: AppSpacing.s16),
               Center(
                 child: GestureDetector(
                   onTap: () => context.go('/login'),
                   child: Text.rich(
                     TextSpan(
-                      text: 'Already have an account? ',
+                      text: l10n.alreadyHaveAccountPrefix,
                       style: AppFonts.tajawal(size: 12, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)),
-                      children: [TextSpan(text: 'Log in', style: AppFonts.tajawal(size: 12, weight: FontWeight.w700, color: AppColors.gold))],
+                      children: [TextSpan(text: l10n.logInLink, style: AppFonts.tajawal(size: 12, weight: FontWeight.w700, color: AppColors.gold))],
                     ),
                   ),
                 ),

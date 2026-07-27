@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../l10n/generated/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_dimens.dart';
 
@@ -41,26 +42,28 @@ class _BottomNav extends StatelessWidget {
 
   const _BottomNav({required this.currentIndex, required this.onTap});
 
-  static const _items = [
-    (outline: Icons.home_outlined, filled: Icons.home, label: 'Home'),
-    (outline: Icons.favorite_border, filled: Icons.favorite, label: 'Saved'),
-    (outline: Icons.chat_bubble_outline, filled: Icons.chat_bubble, label: 'Advisor'),
-    (outline: Icons.person_outline, filled: Icons.person, label: 'Profile'),
+  static const _icons = [
+    (outline: Icons.home_outlined, filled: Icons.home),
+    (outline: Icons.favorite_border, filled: Icons.favorite),
+    (outline: Icons.chat_bubble_outline, filled: Icons.chat_bubble),
+    (outline: Icons.person_outline, filled: Icons.person),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final labels = [l10n.navHome, l10n.navSaved, l10n.navAdvisor, l10n.navProfile];
     return Container(
-      decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: AppColors.divider))),
+      color: AppColors.deepGreen,
       child: SafeArea(
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(AppSpacing.s8, AppSpacing.s10, AppSpacing.s8, AppSpacing.s10),
           child: Row(
-            children: List.generate(_items.length, (index) {
-              final item = _items[index];
+            children: List.generate(_icons.length, (index) {
+              final item = _icons[index];
               final selected = index == currentIndex;
-              final color = selected ? AppColors.nileGreen : AppColors.inkAlpha(0.45);
+              final color = selected ? AppColors.gold : Colors.white.withValues(alpha: 0.5);
               return Expanded(
                 child: GestureDetector(
                   onTap: () => onTap(index),
@@ -70,7 +73,10 @@ class _BottomNav extends StatelessWidget {
                     children: [
                       Icon(selected ? item.filled : item.outline, color: color, size: 22),
                       const SizedBox(height: AppSpacing.s4),
-                      Text(item.label, style: AppFonts.tajawal(size: 10, weight: FontWeight.w600, color: color)),
+                      Text(
+                        labels[index],
+                        style: AppFonts.tajawal(size: 10, weight: selected ? FontWeight.w700 : FontWeight.w600, color: selected ? Colors.white : color),
+                      ),
                     ],
                   ),
                 ),
