@@ -8,6 +8,9 @@ import '../theme/app_dimens.dart';
 /// "Request to Buy" button, or (once requested) Call / WhatsApp buttons.
 class DetailCtaBar extends StatelessWidget {
   final bool isFavorite;
+  /// Rentals get "Request to Rent" instead of "Request to Buy" — same request
+  /// flow either way, only the wording changes.
+  final bool isRental;
   final bool hasRequestedBuy;
   final VoidCallback onToggleFavorite;
   final VoidCallback onRequestBuy;
@@ -17,6 +20,7 @@ class DetailCtaBar extends StatelessWidget {
   const DetailCtaBar({
     super.key,
     required this.isFavorite,
+    required this.isRental,
     required this.hasRequestedBuy,
     required this.onToggleFavorite,
     required this.onRequestBuy,
@@ -56,7 +60,10 @@ class DetailCtaBar extends StatelessWidget {
                   height: 48,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(color: AppColors.nileGreen, borderRadius: BorderRadius.circular(AppRadii.r14)),
-                  child: Text(l10n.requestToBuy, style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: Colors.white)),
+                  child: Text(
+                    isRental ? l10n.requestToRent : l10n.requestToBuy,
+                    style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: Colors.white),
+                  ),
                 ),
               ),
             )

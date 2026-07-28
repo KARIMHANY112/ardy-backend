@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/listing.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_dimens.dart';
-import '../utils/formatters.dart';
 import 'listing_photo.dart';
 import 'tag_badge.dart';
 
@@ -51,12 +50,23 @@ class FavoriteGridCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (listing.status != ListingStatus.live)
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: TagBadge.saleStatus(context, listing.status),
+                // Left-aligned regardless of text direction — the heart sits at
+                // right: 8 either way, so a direction-aware start would collide
+                // with it in Arabic.
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TagBadge.offerType(context, listing.offerType),
+                      if (listing.status != ListingStatus.live) ...[
+                        const SizedBox(height: AppSpacing.s4),
+                        TagBadge.saleStatus(context, listing.status),
+                      ],
+                    ],
                   ),
+                ),
               ],
             ),
             Padding(
@@ -71,7 +81,12 @@ class FavoriteGridCard extends StatelessWidget {
                     style: AppFonts.cairo(size: 12, weight: FontWeight.w700),
                   ),
                   const SizedBox(height: AppSpacing.s2),
-                  Text(formatEgp(listing.price), style: AppFonts.tajawal(size: 12, weight: FontWeight.w700, color: AppColors.gold)),
+                  Text(
+                    listing.priceLabel(context),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.tajawal(size: 12, weight: FontWeight.w700, color: AppColors.gold),
+                  ),
                 ],
               ),
             ),

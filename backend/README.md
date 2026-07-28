@@ -54,6 +54,8 @@ FastAPI backend for the Ardy land & real estate marketplace.
 | Buyers browse only live listings | `GET /listings` | anyone |
 | Buyer asks the Land Advisor | `POST /advisor/ask` | anyone |
 
+Every listing must declare what it's offered as: `offer_type` is required on create and is one of `sale`, `rent`, `resale` (omitting it is a 422). Listings created before this field existed read back as `sale`. Rentals must also carry `rent_period` (`monthly` or `yearly`) — required when `offer_type` is `rent`, rejected otherwise, so a rent figure is never ambiguous between the two.
+
 Submitting a listing (`POST /listings`, or `POST /listings/dashboard` for owners) embeds it for the Land Advisor in the background (`app/routers/advisor.py::embed_and_store_listing`) — best-effort, failures are logged not raised, since the listing is already live either way.
 
 ## Migrations

@@ -18,6 +18,8 @@ from app.models.models import (
     Listing,
     ListingStatus,
     MessageRole,
+    OfferType,
+    RentPeriod,
     User,
 )
 from app.schemas.schemas import AdvisorQuery, AdvisorResponse, ListingOut
@@ -38,11 +40,25 @@ def embed_text(text: str) -> list[float]:
     return response.data[0].embedding
 
 
+_OFFER_TYPE_PHRASES = {
+    OfferType.sale: "for sale",
+    OfferType.rent: "for rent",
+    OfferType.resale: "for resale (second-hand sale)",
+}
+
+
+_RENT_PERIOD_PHRASES = {RentPeriod.monthly: "per month", RentPeriod.yearly: "per year"}
+
+
 def build_listing_text(listing: Listing) -> str:
     """Flattens a listing's fields into text before embedding."""
+    offer = _OFFER_TYPE_PHRASES.get(listing.offer_type, "for sale")
+    price = f"{listing.price} EGP"
+    if listing.rent_period is not None:
+        price += f" {_RENT_PERIOD_PHRASES[listing.rent_period]}"
     return (
-        f"{listing.title}. {listing.type} land in {listing.location}. "
-        f"{listing.size} feddan/m^2, priced at {listing.price} EGP. {listing.description or ''}"
+        f"{listing.title}. {listing.type} land in {listing.location}, offered {offer}. "
+        f"{listing.size} feddan/m^2, priced at {price}. {listing.description or ''}"
     )
 
 
@@ -81,6 +97,15 @@ def _preference_filters(prefs: dict) -> list:
         filters.append(Listing.type.ilike(f"%{prefs['land_type']}%"))
     if prefs.get("location"):
         filters.append(Listing.location.ilike(f"%{prefs['location']}%"))
+    # A buyer who says "to buy" is fine with either kind of sale — first-hand or
+    # resale — so that intent widens rather than pins the offer type.
+    intent = prefs.get("offer_intent")
+    if intent == "rent":
+        filters.append(Listing.offer_type == OfferType.rent)
+    elif intent == "resale":
+        filters.append(Listing.offer_type == OfferType.resale)
+    elif intent == "buy":
+        filters.append(Listing.offer_type.in_([OfferType.sale, OfferType.resale]))
     return filters
 
 
@@ -142,6 +167,8 @@ def ask_advisor(
         "You are Ardi's Land Advisor. You are having an ongoing conversation with a buyer. "
         "Use the conversation history and the known buyer profile to give contextual advice. "
         "Recommend from the listings provided below only — never invent listings or details. "
+        "Each listing says whether it is offered for sale, for rent, or for resale — always "
+        "state that when you mention one, and don't offer a rental as something to buy. "
         "If nothing fits, say so honestly. Be brief and specific about why each one fits. "
         "Always reply in the same language the buyer's latest message is written in — Arabic "
         "message gets an Arabic reply, English gets English — regardless of what language the "

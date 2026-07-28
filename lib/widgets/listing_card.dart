@@ -29,11 +29,20 @@ class ListingCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: 150,
-              width: double.infinity,
-              color: AppColors.sandy,
-              child: ListingPhoto(photoUrls: listing.photoUrls, iconSize: 36),
+            Stack(
+              children: [
+                Container(
+                  height: 150,
+                  width: double.infinity,
+                  color: AppColors.sandy,
+                  child: ListingPhoto(photoUrls: listing.photoUrls, iconSize: 36),
+                ),
+                PositionedDirectional(
+                  top: AppSpacing.s8,
+                  start: AppSpacing.s8,
+                  child: TagBadge.offerType(context, listing.offerType),
+                ),
+              ],
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s14, vertical: AppSpacing.s12),
@@ -50,7 +59,17 @@ class ListingCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(formatEgp(listing.price), style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: AppColors.gold)),
+                      // Flexible: a rental price carries its period ("/month"), which
+                      // can crowd the size out on a narrow screen.
+                      Flexible(
+                        child: Text(
+                          listing.priceLabel(context),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: AppColors.gold),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.s8),
                       Text(formatSqm(listing.sizeSqm, AppLocalizations.of(context)!.sqmSuffix), style: AppFonts.tajawal(size: 12, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6))),
                     ],
                   ),

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../l10n/generated/app_localizations.dart';
+import '../utils/formatters.dart';
 
 /// Mirrors backend app.schemas.schemas.ListingOut, trimmed for UI stubbing.
 enum ListingCategory { factory, land, shop }
@@ -17,6 +18,54 @@ extension ListingCategoryLabel on ListingCategory {
         return l10n.categoryShop;
     }
   }
+}
+
+/// Mirrors backend app.models.models.OfferType — what the listing is offered as.
+/// Every listing declares one; older rows default to [sale].
+enum OfferType { sale, rent, resale }
+
+extension OfferTypeLabel on OfferType {
+  String label(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (this) {
+      case OfferType.sale:
+        return l10n.offerTypeSale;
+      case OfferType.rent:
+        return l10n.offerTypeRent;
+      case OfferType.resale:
+        return l10n.offerTypeResale;
+    }
+  }
+}
+
+OfferType _offerTypeFromString(String value) => OfferType.values.firstWhere(
+      (o) => o.name == value,
+      orElse: () => OfferType.sale,
+    );
+
+/// Mirrors backend app.models.models.RentPeriod — what a rental's price is charged
+/// per. Null on anything that isn't [OfferType.rent], since a sale price has no period.
+enum RentPeriod { monthly, yearly }
+
+extension RentPeriodLabel on RentPeriod {
+  /// The suffix appended to a rental's price, e.g. "/month".
+  String priceSuffix(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (this) {
+      case RentPeriod.monthly:
+        return l10n.perMonthSuffix;
+      case RentPeriod.yearly:
+        return l10n.perYearSuffix;
+    }
+  }
+}
+
+RentPeriod? _rentPeriodFromString(String? value) {
+  if (value == null) return null;
+  for (final period in RentPeriod.values) {
+    if (period.name == value) return period;
+  }
+  return null;
 }
 
 enum LicenseStatus { licensed, pending, notApplicable }
@@ -92,7 +141,10 @@ class Listing {
   final String refCode;
   final String title;
   final ListingCategory category;
+  final OfferType offerType;
   final double price;
+  /// Only set when [offerType] is rent — see [priceLabel].
+  final RentPeriod? rentPeriod;
   final double sizeSqm;
   final String location;
   final String description;
@@ -110,7 +162,9 @@ class Listing {
     required this.refCode,
     required this.title,
     required this.category,
+    required this.offerType,
     required this.price,
+    this.rentPeriod,
     required this.sizeSqm,
     required this.location,
     required this.description,
@@ -132,7 +186,9 @@ class Listing {
         refCode: json['ref_code'] as String,
         title: json['title'] as String,
         category: _categoryFromBackendType(json['type'] as String),
+        offerType: _offerTypeFromString(json['offer_type'] as String? ?? 'sale'),
         price: (json['price'] as num).toDouble(),
+        rentPeriod: _rentPeriodFromString(json['rent_period'] as String?),
         sizeSqm: (json['size'] as num).toDouble(),
         location: json['location'] as String,
         description: json['description'] as String? ?? '',
@@ -151,7 +207,9 @@ class Listing {
         'ref_code': refCode,
         'title': title,
         'type': category.name,
+        'offer_type': offerType.name,
         'price': price,
+        'rent_period': rentPeriod?.name,
         'size': sizeSqm,
         'location': location,
         'description': description,
@@ -167,7 +225,9 @@ class Listing {
         refCode: refCode,
         title: title,
         category: category,
+        offerType: offerType,
         price: price,
+        rentPeriod: rentPeriod,
         sizeSqm: sizeSqm,
         location: location,
         description: description,
@@ -185,4 +245,16 @@ class Listing {
         (c) => c.name == type,
         orElse: () => ListingCategory.land,
       );
+}
+
+extension ListingPriceLabel on Listing {
+  /// The price as buyers should read it: "EGP 12,000/month" on a rental that carries
+  /// a period, plain "EGP 4.2M" on everything else. Every surface that prints a price
+  /// goes through this — a rent figure without its period is ambiguous by orders of
+  /// magnitude.
+  String priceLabel(BuildContext context) {
+    final period = rentPeriod;
+    if (period == null) return formatEgp(price);
+    return '${formatEgp(price)}${period.priceSuffix(context)}';
+  }
 }

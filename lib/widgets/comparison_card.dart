@@ -5,8 +5,8 @@ import '../l10n/generated/app_localizations.dart';
 import '../models/listing.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_dimens.dart';
-import '../utils/formatters.dart';
 import 'listing_photo.dart';
+import 'tag_badge.dart';
 
 /// The inline "comparison panel" message type the Land Advisor renders
 /// alongside its text replies — a horizontally-scrolling strip of mini
@@ -41,12 +41,21 @@ class ComparisonCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          height: 80,
-                          width: double.infinity,
-                          clipBehavior: Clip.antiAlias,
-                          decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(AppRadii.r10)),
-                          child: ListingPhoto(photoUrls: listing.photoUrls, iconSize: 20),
+                        Stack(
+                          children: [
+                            Container(
+                              height: 80,
+                              width: double.infinity,
+                              clipBehavior: Clip.antiAlias,
+                              decoration: BoxDecoration(color: AppColors.sandy, borderRadius: BorderRadius.circular(AppRadii.r10)),
+                              child: ListingPhoto(photoUrls: listing.photoUrls, iconSize: 20),
+                            ),
+                            PositionedDirectional(
+                              top: AppSpacing.s4,
+                              start: AppSpacing.s4,
+                              child: TagBadge.offerType(context, listing.offerType),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: AppSpacing.s4),
                         Text(
@@ -55,7 +64,12 @@ class ComparisonCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: AppFonts.tajawal(size: 11, weight: FontWeight.w600),
                         ),
-                        Text(formatEgp(listing.price), style: AppFonts.tajawal(size: 12, weight: FontWeight.w700, color: AppColors.gold)),
+                        Text(
+                          listing.priceLabel(context),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppFonts.tajawal(size: 12, weight: FontWeight.w700, color: AppColors.gold),
+                        ),
                       ],
                     ),
                   ),

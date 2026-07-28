@@ -99,7 +99,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
                         child: ListTile(
                           leading: const CircleAvatar(backgroundColor: AppColors.sandy, child: Icon(Icons.photo_outlined, color: AppColors.divider)),
                           title: Text(listing.title),
-                          subtitle: Text('${listing.category.label(context)} · ${listing.location}'),
+                          subtitle: Text('${listing.offerType.label(context)} · ${listing.category.label(context)} · ${listing.location}'),
                           trailing: _StatusPill(status: listing.status),
                           onTap: listing.status == ListingStatus.live
                               ? () => context.push('/listing/${listing.id}')
@@ -135,7 +135,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
                         child: ListTile(
                           leading: const CircleAvatar(backgroundColor: AppColors.sandy, child: Icon(Icons.request_quote_outlined, color: AppColors.divider)),
                           title: Text(request.listing.title),
-                          subtitle: Text('${request.listing.category.label(context)} · ${request.listing.location}'),
+                          subtitle: Text('${request.listing.offerType.label(context)} · ${request.listing.category.label(context)} · ${request.listing.location}'),
                           trailing: _BuyRequestStatusPill(request: request),
                           onTap: request.listing.status == ListingStatus.live
                               ? () => context.push('/listing/${request.listing.id}')

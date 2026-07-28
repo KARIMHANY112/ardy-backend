@@ -66,6 +66,30 @@ class TestExtractPreferences(unittest.TestCase):
         # "at least 10 feddan" must not leak a budget_min (regression: "le" matched "least").
         self.assertNotIn("budget_min", extract_preferences("at least 10 feddan of farmland"))
 
+    def test_offer_intent_rent(self):
+        self.assertEqual(extract_preferences("I want to rent a shop")["offer_intent"], "rent")
+        self.assertEqual(extract_preferences("anything for lease in Tanta")["offer_intent"], "rent")
+
+    def test_offer_intent_buy(self):
+        self.assertEqual(extract_preferences("I want to buy land")["offer_intent"], "buy")
+        self.assertEqual(extract_preferences("what do you have for sale?")["offer_intent"], "buy")
+
+    def test_offer_intent_resale_beats_buy(self):
+        # "resale" contains "sale" — the more specific intent has to win.
+        self.assertEqual(extract_preferences("looking for a resale unit")["offer_intent"], "resale")
+
+    def test_offer_intent_rent_beats_buy_when_both_mentioned(self):
+        self.assertEqual(extract_preferences("buy or rent, either works")["offer_intent"], "rent")
+
+    def test_offer_intent_arabic(self):
+        # Arabic prefixes glue onto the keyword ("للإيجار"), so these match as substrings.
+        self.assertEqual(extract_preferences("عايز محل للإيجار")["offer_intent"], "rent")
+        self.assertEqual(extract_preferences("أرض للبيع في المنيا")["offer_intent"], "buy")
+
+    def test_offer_intent_not_fired_by_substring(self):
+        # "current" must not read as "rent".
+        self.assertNotIn("offer_intent", extract_preferences("what is the current listing count"))
+
     def test_no_signal_returns_empty(self):
         self.assertEqual(extract_preferences("show me some listings please"), {})
 
@@ -112,6 +136,9 @@ class TestProfileSummary(unittest.TestCase):
 
     def test_land_type_qualifies_noun(self):
         self.assertIn("factory land", build_profile_summary({"land_type": "factory"}))
+
+    def test_offer_intent_leads_the_summary(self):
+        self.assertTrue(build_profile_summary({"offer_intent": "rent", "land_type": "shop"}).startswith("looking to rent"))
 
     def test_full_profile(self):
         summary = build_profile_summary(

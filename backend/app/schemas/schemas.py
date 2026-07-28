@@ -2,9 +2,17 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, model_validator
 
-from app.models.models import UserRole, UserStatus, ListingStatus, BuyRequestStatus, LicenseStatus
+from app.models.models import (
+    UserRole,
+    UserStatus,
+    ListingStatus,
+    BuyRequestStatus,
+    LicenseStatus,
+    OfferType,
+    RentPeriod,
+)
 
 
 # ---- Auth ----
@@ -59,7 +67,13 @@ class ResetPasswordRequest(BaseModel):
 class ListingCreate(BaseModel):
     title: str
     type: str
+    # Required, no default — every listing has to say whether it's for sale, for rent
+    # or a resale.
+    offer_type: OfferType
     price: float
+    # What the price is charged per — mandatory on rentals, rejected on sales, so a
+    # rent figure is never ambiguous between monthly and yearly.
+    rent_period: Optional[RentPeriod] = None
     size: float
     location: str
     description: Optional[str] = None
@@ -67,13 +81,23 @@ class ListingCreate(BaseModel):
     longitude: Optional[float] = None
     license_status: LicenseStatus = LicenseStatus.pending
 
+    @model_validator(mode="after")
+    def check_rent_period(self):
+        if self.offer_type is OfferType.rent and self.rent_period is None:
+            raise ValueError("rent_period is required when offer_type is rent")
+        if self.offer_type is not OfferType.rent and self.rent_period is not None:
+            raise ValueError("rent_period only applies when offer_type is rent")
+        return self
+
 
 class ListingOut(BaseModel):
     id: uuid.UUID
     ref_code: str
     title: str
     type: str
+    offer_type: OfferType
     price: float
+    rent_period: Optional[RentPeriod] = None
     size: float
     location: str
     description: Optional[str]

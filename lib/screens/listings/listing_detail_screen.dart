@@ -172,6 +172,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                         children: [
                           Row(
                             children: [
+                              TagBadge.offerType(context, listing.offerType),
+                              const SizedBox(width: AppSpacing.s8),
                               TagBadge(text: listing.category.label(context).toUpperCase(), color: AppColors.deepGreen),
                               if (listing.status == ListingStatus.papersPending) ...[
                                 const SizedBox(width: AppSpacing.s8),
@@ -188,7 +190,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                             crossAxisAlignment: CrossAxisAlignment.baseline,
                             textBaseline: TextBaseline.alphabetic,
                             children: [
-                              Text(formatEgp(listing.price), style: AppFonts.cairo(size: 26, weight: FontWeight.w800, color: AppColors.gold)),
+                              Text(listing.priceLabel(context), style: AppFonts.cairo(size: 26, weight: FontWeight.w800, color: AppColors.gold)),
                               if (listing.sizeSqm > 0) ...[
                                 const SizedBox(width: AppSpacing.s8),
                                 Text(
@@ -273,6 +275,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
             if (listing.status == ListingStatus.live)
               DetailCtaBar(
                 isFavorite: _isFavorite,
+                isRental: listing.offerType == OfferType.rent,
                 hasRequestedBuy: _hasRequestedBuy,
                 onToggleFavorite: _favoriteBusy ? () {} : _toggleFavorite,
                 onRequestBuy: _requestToBuy,

@@ -24,6 +24,17 @@ class TagBadge extends StatelessWidget {
     return TagBadge(text: status.label(context), color: color);
   }
 
+  /// What the listing is offered as — for sale, for rent, or a resale. Shown on
+  /// every listing surface, so a buyer never has to guess.
+  factory TagBadge.offerType(BuildContext context, OfferType offerType) {
+    final color = switch (offerType) {
+      OfferType.sale => AppColors.deepGreen,
+      OfferType.rent => AppColors.gold,
+      OfferType.resale => AppColors.nileGreen,
+    };
+    return TagBadge(text: offerType.label(context).toUpperCase(), color: color);
+  }
+
   /// The selling status shown on browse cards — available (live), papers
   /// pending, or sold. Distinct from [license], which is about the property's
   /// registration paperwork, not whether it's for sale.

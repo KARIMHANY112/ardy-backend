@@ -34,6 +34,20 @@ class BuyRequestStatus(str, enum.Enum):
     rejected = "rejected"
 
 
+class OfferType(str, enum.Enum):
+    """What the listing is actually being offered as — every listing must declare one."""
+    sale = "sale"      # first-hand sale, straight from the owner/developer
+    rent = "rent"      # offered to rent, not to buy
+    resale = "resale"  # second-hand sale, resold by a previous buyer
+
+
+class RentPeriod(str, enum.Enum):
+    """How often the rent is charged on a for-rent listing. Not assumable — shops are
+    usually let monthly here, while land and factories are commonly leased by the year."""
+    monthly = "monthly"
+    yearly = "yearly"
+
+
 class LicenseStatus(str, enum.Enum):
     licensed = "licensed"            # property has its registration/license papers in order
     pending = "pending"              # licensing is still in progress
@@ -88,6 +102,14 @@ class Listing(Base):
     longitude = Column(Float, nullable=True)
 
     status = Column(Enum(ListingStatus), nullable=False, default=ListingStatus.pending)
+
+    # Sale / rent / resale — required on every new listing. Rows that predate this
+    # field fall back to sale, which is what the app offered up to now.
+    offer_type = Column(Enum(OfferType), nullable=False, default=OfferType.sale, server_default=OfferType.sale.value)
+
+    # What `price` is charged per, on rentals only — required when offer_type is rent,
+    # null for sale/resale (enforced in ListingCreate, since sale prices have no period).
+    rent_period = Column(Enum(RentPeriod), nullable=True)
 
     # Set by the submitter when posting — whether the property's registration papers
     # are in order. Defaults to pending for rows that predate this field.

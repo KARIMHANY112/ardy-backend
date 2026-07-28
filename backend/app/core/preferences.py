@@ -6,7 +6,7 @@ message; `merge_preferences` accumulates them across turns; `build_profile_summa
 renders the profile back into text for the embedding query and the LLM prompt.
 
 Recognised preference keys: budget_min, budget_max, size_min, size_max,
-land_type, location (all optional).
+land_type, location, offer_intent (all optional).
 """
 import re
 
@@ -29,6 +29,17 @@ _LOCATIONS = [
     "6 october", "new cairo", "sheikh zayed", "north coast", "sahel", "ain sokhna",
     "mansoura", "damanhur", "kafr el sheikh", "banha", "shibin el kom",
 ]
+
+# Whether the buyer wants to rent, buy, or specifically buy second-hand. Maps to an
+# offer_type filter in advisor._preference_filters — note "buy" deliberately allows
+# both sale and resale there, which is why the intent isn't just an OfferType value.
+# Checked resale-first: "resale" also contains "sale", and renting beats buying when
+# a message mentions both, since "rent" is the more specific ask.
+_OFFER_INTENT_KEYWORDS = {
+    "resale": ["resale", "resell", "second hand", "second-hand", "إعادة بيع", "اعادة بيع"],
+    "rent": ["rent", "rental", "lease", "leasing", "tenant", "إيجار", "ايجار", "تأجير", "استئجار"],
+    "buy": ["buy", "buying", "purchase", "for sale", "شراء", "للبيع", "تمليك"],
+}
 
 # Words that qualify a number as an upper vs lower bound.
 _MAX_HINTS = ["under", "below", "less than", "up to", "max", "maximum", "at most", "no more than", "cheaper than", "within"]
@@ -134,6 +145,18 @@ def _extract_land_type(text: str) -> dict:
     return {}
 
 
+def _extract_offer_intent(text: str) -> dict:
+    for intent, keywords in _OFFER_INTENT_KEYWORDS.items():
+        for kw in keywords:
+            # Latin keywords need a word boundary so "rent" doesn't fire on "current";
+            # Arabic ones are matched as plain substrings, since \b sits between two
+            # word characters in prefixed forms like "للإيجار" and would never match.
+            hit = re.search(rf"\b{kw}", text) if kw.isascii() else kw in text
+            if hit:
+                return {"offer_intent": intent}
+    return {}
+
+
 def _extract_location(text: str) -> dict:
     for loc in _LOCATIONS:
         if re.search(rf"\b{re.escape(loc)}\b", text):
@@ -150,6 +173,7 @@ def extract_preferences(message: str) -> dict:
     prefs.update(_extract_size(text))
     prefs.update(_extract_land_type(text))
     prefs.update(_extract_location(text))
+    prefs.update(_extract_offer_intent(text))
     return prefs
 
 
@@ -168,6 +192,9 @@ def build_profile_summary(prefs: dict | None) -> str:
     embedding query text and in the LLM system context."""
     prefs = prefs or {}
     parts: list[str] = []
+    intent = prefs.get("offer_intent")
+    if intent:
+        parts.append({"rent": "looking to rent", "buy": "looking to buy", "resale": "looking for a resale"}[intent])
     land_type = prefs.get("land_type")
     if land_type:
         parts.append("land" if land_type == "land" else f"{land_type} land")
