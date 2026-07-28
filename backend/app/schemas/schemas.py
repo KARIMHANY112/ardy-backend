@@ -116,6 +116,24 @@ class ListingOut(BaseModel):
         from_attributes = True
 
 
+class ListingUpdate(BaseModel):
+    """Partial edit — only the fields present in the request body change. The
+    offer_type/rent_period invariant can't be checked here the way ListingCreate
+    does it, since a partial payload can't see the listing's current values; the
+    router validates the merged result instead (see listings.resolve_offer_fields)."""
+    title: Optional[str] = None
+    type: Optional[str] = None
+    offer_type: Optional[OfferType] = None
+    rent_period: Optional[RentPeriod] = None
+    price: Optional[float] = None
+    size: Optional[float] = None
+    location: Optional[str] = None
+    description: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    license_status: Optional[LicenseStatus] = None
+
+
 class ListingSaleAction(BaseModel):
     sold_price: float
     sold_to_name: str

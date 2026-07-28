@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.core.deps import get_current_user, require_owner, require_buyer
 from app.core.notifications import send_push_notification
 from app.core.storage import upload_listing_photo
-from app.models.models import BuyRequest, BuyRequestStatus, Listing, ListingStatus, User
+from app.models.models import BuyRequest, BuyRequestStatus, Listing, ListingStatus, OfferType, User
 from app.routers.advisor import embed_and_store_listing
 from app.schemas.schemas import (
     BuyRequestDashboardOut,
@@ -19,6 +19,7 @@ from app.schemas.schemas import (
     ListingOut,
     ListingDashboardOut,
     ListingSaleAction,
+    ListingUpdate,
 )
 
 router = APIRouter(prefix="/listings", tags=["listings"])
@@ -33,6 +34,39 @@ def generate_ref_code(db: Session) -> str:
 
 
 _BROWSABLE_STATUSES = [ListingStatus.live, ListingStatus.papers_pending]
+
+# Fields that feed the Land Advisor's embedding (see advisor.build_listing_text) —
+# editing any of them leaves the stored vector describing a listing that no longer
+# exists, so it has to be rebuilt.
+_EMBEDDED_FIELDS = {"title", "type", "offer_type", "rent_period", "price", "size", "location", "description"}
+
+
+def resolve_offer_fields(current_offer_type, current_rent_period, updates: dict) -> dict:
+    """Works out the final offer_type/rent_period for a partial edit, and enforces the
+    same invariant ListingCreate does: a rental needs a period, anything else must not
+    have one.
+
+    Switching a listing off rent silently drops its period rather than erroring —
+    "yearly" means nothing on a sale, so there's no data worth protecting. Switching
+    *onto* rent does error unless a period comes with it, since there's no safe default
+    (monthly and yearly differ by 12x).
+
+    Raises ValueError with a message fit to return to the caller.
+    """
+    offer_type = updates.get("offer_type", current_offer_type)
+    if "rent_period" in updates:
+        rent_period = updates["rent_period"]
+    elif offer_type is OfferType.rent:
+        rent_period = current_rent_period
+    else:
+        rent_period = None
+
+    if offer_type is OfferType.rent and rent_period is None:
+        raise ValueError("rent_period is required when offer_type is rent")
+    if offer_type is not OfferType.rent and rent_period is not None:
+        raise ValueError("rent_period only applies when offer_type is rent")
+
+    return {"offer_type": offer_type, "rent_period": rent_period}
 
 
 @router.get("", response_model=list[ListingOut])
@@ -162,6 +196,44 @@ def create_listing_as_owner(
     db.refresh(listing)
 
     background_tasks.add_task(embed_and_store_listing, listing.id)
+
+    return listing
+
+
+@router.patch("/{listing_id}", response_model=ListingDashboardOut)
+def update_listing(
+    listing_id: str,
+    payload: ListingUpdate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_owner),
+):
+    """Owner corrects a listing's details. Partial — only the fields sent are touched.
+
+    Works at any status: the sale bookkeeping (sold_price and friends) is snapshotted
+    when a buy request is approved, so editing the asking price later can't rewrite a
+    deal that was already agreed.
+    """
+    listing = db.query(Listing).filter(Listing.id == listing_id).first()
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+
+    updates = payload.model_dump(exclude_unset=True)
+    try:
+        updates.update(resolve_offer_fields(listing.offer_type, listing.rent_period, updates))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    # Diff first: resolve_offer_fields always reports an offer_type/rent_period, and a
+    # no-op edit shouldn't burn an embedding call.
+    changed = {field: value for field, value in updates.items() if getattr(listing, field) != value}
+    for field, value in changed.items():
+        setattr(listing, field, value)
+    db.commit()
+    db.refresh(listing)
+
+    if _EMBEDDED_FIELDS & changed.keys():
+        background_tasks.add_task(embed_and_store_listing, listing.id)
 
     return listing
 

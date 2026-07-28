@@ -53,8 +53,11 @@ FastAPI backend for the Ardy land & real estate marketplace.
 | Seller checks their own listings | `GET /listings/mine/requests` | seller |
 | Buyers browse only live listings | `GET /listings` | anyone |
 | Buyer asks the Land Advisor | `POST /advisor/ask` | anyone |
+| Owner corrects a listing's details | `PATCH /listings/{id}` | owner |
 
 Every listing must declare what it's offered as: `offer_type` is required on create and is one of `sale`, `rent`, `resale` (omitting it is a 422). Listings created before this field existed read back as `sale`. Rentals must also carry `rent_period` (`monthly` or `yearly`) — required when `offer_type` is `rent`, rejected otherwise, so a rent figure is never ambiguous between the two.
+
+`PATCH /listings/{id}` is a partial edit — only the fields in the body change, and it's owner-only. Switching a listing off `rent` clears its `rent_period` automatically; switching *onto* rent without supplying one is a 400, since monthly and yearly are 12x apart and there's no safe default. There's no in-app edit screen yet, so this is driven from `/docs`.
 
 Submitting a listing (`POST /listings`, or `POST /listings/dashboard` for owners) embeds it for the Land Advisor in the background (`app/routers/advisor.py::embed_and_store_listing`) — best-effort, failures are logged not raised, since the listing is already live either way.
 
