@@ -43,7 +43,9 @@ We retain your account, listing, conversation, and favorites data for as long as
 
 ## 7. Your Rights
 
-You may request access to, correction of, or deletion of your personal data by contacting us at [insert contact email]. We will respond to verified requests within a reasonable timeframe, subject to any legal obligations to retain certain records.
+You may request access to, correction of, or deletion of your personal data by contacting us at ardyy2026@gmail.com. We will respond to verified requests within a reasonable timeframe, subject to any legal obligations to retain certain records.
+
+To request deletion of your account and associated data, see our [Account Deletion page](/legal/delete-account), which explains the process and what data is removed.
 
 ## 8. Children's Privacy
 

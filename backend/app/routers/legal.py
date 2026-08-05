@@ -34,3 +34,8 @@ def privacy_policy():
 @router.get("/terms", response_class=HTMLResponse)
 def terms_of_service():
     return _render("terms_of_service.md")
+
+
+@router.get("/delete-account", response_class=HTMLResponse)
+def delete_account():
+    return _render("delete_account.md")
