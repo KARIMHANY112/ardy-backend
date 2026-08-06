@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -19,9 +20,13 @@ RESET_CODE_TTL_MINUTES = 15
 
 @router.post("/signup", response_model=Token)
 def signup(payload: UserCreate, db: Session = Depends(get_db)):
-    existing = db.query(User).filter(User.email == payload.email).first()
-    if existing:
+    if db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
+    # users.phone is UNIQUE too. Without this check a duplicate number reached the
+    # INSERT and surfaced as an unhandled IntegrityError — a 500 on what is really
+    # ordinary user error.
+    if db.query(User).filter(User.phone == payload.phone).first():
+        raise HTTPException(status_code=400, detail="Phone number already registered")
 
     user = User(
         name=payload.name,
@@ -32,7 +37,13 @@ def signup(payload: UserCreate, db: Session = Depends(get_db)):
         status=UserStatus.approved,
     )
     db.add(user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Backstop for the race between the checks above and this commit: two
+        # signups with the same email/phone in flight at once.
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Email or phone number already registered")
     db.refresh(user)
 
     token = create_access_token({"sub": str(user.id), "role": user.role.value})
