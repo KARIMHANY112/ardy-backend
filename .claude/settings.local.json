@@ -94,7 +94,10 @@
       "Bash(/c/Users/karim/AppData/Local/Android/sdk/platform-tools/adb.exe shell *)",
       "Bash(tasklist)",
       "Bash(timeout 150 bash -c 'until \"/c/Users/karim/AppData/Local/Android/sdk/platform-tools/adb.exe\" shell getprop sys.boot_completed 2>/dev/null | grep -q 1; do sleep 3; done')",
-      "Bash(echo \"boot-wait exit: $?\")"
+      "Bash(echo \"boot-wait exit: $?\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('app/routers/advisor.py', encoding='utf-8'\\).read\\(\\)\\)\")",
+      "Bash(git push *)",
+      "Bash(python -m unittest discover -s tests)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -25,8 +25,15 @@ class TestPreferenceFilters(unittest.TestCase):
     def test_size_bounds(self):
         filters = _preference_filters({"size_min": 3, "size_max": 10})
         joined = " ".join(_sql(f) for f in filters)
-        self.assertIn("listings.size <=", joined)
-        self.assertIn("listings.size >=", joined)
+        self.assertIn("<= 10", joined)
+        self.assertIn(">= 3", joined)
+
+    def test_size_bounds_compare_in_sqm_not_raw_size(self):
+        """Bounds are in m², so feddan rows must be converted inside the query.
+        Comparing the raw `size` column would rank 5 feddan below a 500 m² shop."""
+        joined = " ".join(_sql(f) for f in _preference_filters({"size_min": 3, "size_max": 10}))
+        self.assertIn("size_unit", joined)
+        self.assertIn("4200", joined)
 
     def test_land_type_ilike(self):
         sql = _sql(_preference_filters({"land_type": "land"})[0]).lower()

@@ -14,7 +14,7 @@ You must register with accurate information to use the App. You are responsible 
 
 ## 3. User-Generated Content
 
-You are solely responsible for the accuracy of any listing you post, including price, size, location, description, and photos. Listings are subject to review before appearing publicly. We reserve the right to reject, remove, or edit any listing that we determine, in our sole discretion, to be inaccurate, fraudulent, or in violation of these Terms.
+Listings on Ardy are created and published by Ardy directly, based on properties submitted to us via WhatsApp or other direct contact. We are responsible for the accuracy of listing content we publish, including price, size, location, description, and photos. We reserve the right to reject, remove, or edit any listing that we determine, in our sole discretion, to be inaccurate, fraudulent, or in violation of these Terms.
 
 By posting content, you grant Ardy a non-exclusive, royalty-free license to display, store, and distribute that content as necessary to operate the App.
 

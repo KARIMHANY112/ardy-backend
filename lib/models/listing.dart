@@ -68,6 +68,34 @@ RentPeriod? _rentPeriodFromString(String? value) {
   return null;
 }
 
+/// Mirrors backend app.models.models.SizeUnit — the unit [Listing.size] is in.
+/// Land here is traded by the feddan while shops and factories are quoted in m²,
+/// so the number on its own is ambiguous: 5 feddan and 5 m² differ 4,200-fold.
+enum SizeUnit { sqm, feddan }
+
+/// One feddan is 4,200 m² — the standard Egyptian conversion.
+const double sqmPerFeddan = 4200.0;
+
+extension SizeUnitLabel on SizeUnit {
+  /// The suffix shown after a size, e.g. "feddan" / "sqm".
+  String label(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (this) {
+      case SizeUnit.sqm:
+        return l10n.sqmSuffix;
+      case SizeUnit.feddan:
+        return l10n.feddanSuffix;
+    }
+  }
+}
+
+/// Falls back to sqm: rows created before the backend recorded a unit were all
+/// entered in m², which is also what the UI used to assume for everyone.
+SizeUnit _sizeUnitFromString(String? value) => SizeUnit.values.firstWhere(
+      (u) => u.name == value,
+      orElse: () => SizeUnit.sqm,
+    );
+
 enum LicenseStatus { licensed, pending, notApplicable }
 
 extension LicenseStatusLabel on LicenseStatus {
@@ -145,7 +173,11 @@ class Listing {
   final double price;
   /// Only set when [offerType] is rent — see [priceLabel].
   final RentPeriod? rentPeriod;
-  final double sizeSqm;
+
+  /// The advertised size, expressed in [sizeUnit] — never assume m². Display it
+  /// with [sizeUnit]; use [sizeSqm] when comparing sizes across listings.
+  final double size;
+  final SizeUnit sizeUnit;
   final String location;
   final String description;
   final LicenseStatus license;
@@ -165,7 +197,8 @@ class Listing {
     required this.offerType,
     required this.price,
     this.rentPeriod,
-    required this.sizeSqm,
+    required this.size,
+    this.sizeUnit = SizeUnit.sqm,
     required this.location,
     required this.description,
     required this.license,
@@ -180,6 +213,10 @@ class Listing {
 
   bool get hasCoordinates => latitude != null && longitude != null;
 
+  /// [size] normalised to m², for comparing listings quoted in different units.
+  /// Not for display — showing a feddan plot as 21,000 m² isn't what was advertised.
+  double get sizeSqm => sizeUnit == SizeUnit.feddan ? size * sqmPerFeddan : size;
+
   /// Maps backend app.schemas.schemas.ListingOut.
   factory Listing.fromJson(Map<String, dynamic> json) => Listing(
         id: json['id'] as String,
@@ -189,7 +226,8 @@ class Listing {
         offerType: _offerTypeFromString(json['offer_type'] as String? ?? 'sale'),
         price: (json['price'] as num).toDouble(),
         rentPeriod: _rentPeriodFromString(json['rent_period'] as String?),
-        sizeSqm: (json['size'] as num).toDouble(),
+        size: (json['size'] as num).toDouble(),
+        sizeUnit: _sizeUnitFromString(json['size_unit'] as String?),
         location: json['location'] as String,
         description: json['description'] as String? ?? '',
         license: _licenseStatusFromString(json['license_status'] as String? ?? 'pending'),
@@ -210,7 +248,8 @@ class Listing {
         'offer_type': offerType.name,
         'price': price,
         'rent_period': rentPeriod?.name,
-        'size': sizeSqm,
+        'size': size,
+        'size_unit': sizeUnit.name,
         'location': location,
         'description': description,
         'status': status.wireValue,
@@ -228,7 +267,8 @@ class Listing {
         offerType: offerType,
         price: price,
         rentPeriod: rentPeriod,
-        sizeSqm: sizeSqm,
+        size: size,
+        sizeUnit: sizeUnit,
         location: location,
         description: description,
         license: license,

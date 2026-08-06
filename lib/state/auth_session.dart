@@ -81,6 +81,13 @@ class AuthSession extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Permanently deletes the account server-side, then clears the local session.
+  /// Irreversible — callers must confirm with the user first.
+  Future<void> deleteAccount() async {
+    await api.delete('/users/me');
+    await logout();
+  }
+
   Future<void> logout() async {
     api.token = null;
     _user = null;

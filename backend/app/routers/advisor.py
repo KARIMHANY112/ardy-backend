@@ -20,6 +20,7 @@ from app.models.models import (
     MessageRole,
     OfferType,
     RentPeriod,
+    SizeUnit,
     User,
 )
 from app.schemas.schemas import AdvisorQuery, AdvisorResponse, ListingOut
@@ -56,9 +57,14 @@ def build_listing_text(listing: Listing) -> str:
     price = f"{listing.price} EGP"
     if listing.rent_period is not None:
         price += f" {_RENT_PERIOD_PHRASES[listing.rent_period]}"
+    # State the unit the seller actually advertised, and the m² equivalent when they
+    # differ — "5 feddan" alone reads as tiny to an embedding trained on m² figures.
+    size = f"{listing.size:g} {SizeUnit(listing.size_unit).value}"
+    if listing.size_unit != SizeUnit.sqm:
+        size += f" ({listing.size_sqm:g} m^2)"
     return (
         f"{listing.title}. {listing.type} land in {listing.location}, offered {offer}. "
-        f"{listing.size} feddan/m^2, priced at {price}. {listing.description or ''}"
+        f"{size}, priced at {price}. {listing.description or ''}"
     )
 
 
@@ -89,10 +95,13 @@ def _preference_filters(prefs: dict) -> list:
         filters.append(Listing.price <= prefs["budget_max"])
     if prefs.get("budget_min") is not None:
         filters.append(Listing.price >= prefs["budget_min"])
+    # Compared in m² on both sides: preferences are normalised at extraction time,
+    # and size_sqm converts feddan rows in SQL. Filtering on the raw `size` column
+    # would rank a 5-feddan plot as smaller than a 500 m² shop.
     if prefs.get("size_max") is not None:
-        filters.append(Listing.size <= prefs["size_max"])
+        filters.append(Listing.size_sqm <= prefs["size_max"])
     if prefs.get("size_min") is not None:
-        filters.append(Listing.size >= prefs["size_min"])
+        filters.append(Listing.size_sqm >= prefs["size_min"])
     if prefs.get("land_type"):
         filters.append(Listing.type.ilike(f"%{prefs['land_type']}%"))
     if prefs.get("location"):

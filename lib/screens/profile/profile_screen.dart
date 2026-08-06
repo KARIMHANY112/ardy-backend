@@ -28,6 +28,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   late Future<List<BuyRequest>> _boughtFuture;
+  bool _deleting = false;
 
   @override
   void initState() {
@@ -44,6 +45,42 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  /// Two-step by design: account deletion is irreversible and also takes down any
+  /// listings the user posted, so it must never be one stray tap away.
+  Future<void> _confirmDeleteAccount() async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.deleteAccountTitle, style: AppFonts.cairo(size: 17, weight: FontWeight.w700)),
+        content: Text(l10n.deleteAccountWarning, style: AppFonts.tajawal(size: 13, weight: FontWeight.w400)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.deleteAccountCancel, style: AppFonts.tajawal(size: 13, weight: FontWeight.w700, color: AppColors.ink)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.deleteAccountConfirm, style: AppFonts.tajawal(size: 13, weight: FontWeight.w700, color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _deleting = true);
+    try {
+      await context.read<AuthSession>().deleteAccount();
+      if (mounted) context.go('/login');
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _deleting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.deleteAccountFailed(error.toString()))),
+      );
+    }
   }
 
   @override
@@ -152,6 +189,31 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   const Icon(Icons.logout, color: AppColors.nileGreen, size: 18),
                   const SizedBox(width: AppSpacing.s8),
                   Text(l10n.logOut, style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: AppColors.nileGreen)),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.s10),
+          // Play requires an in-app deletion path for any app with accounts, and
+          // the Privacy Policy promises one. Styled destructively and kept last.
+          GestureDetector(
+            onTap: _deleting ? null : _confirmDeleteAccount,
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppRadii.r14),
+                border: Border.all(color: Colors.redAccent, width: 1.5),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_deleting)
+                    const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.redAccent))
+                  else
+                    const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
+                  const SizedBox(width: AppSpacing.s8),
+                  Text(l10n.deleteAccount, style: AppFonts.tajawal(size: 14, weight: FontWeight.w700, color: Colors.redAccent)),
                 ],
               ),
             ),

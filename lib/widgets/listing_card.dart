@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../l10n/generated/app_localizations.dart';
 import '../models/listing.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_dimens.dart';
@@ -70,7 +69,7 @@ class ListingCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: AppSpacing.s8),
-                      Text(formatSqm(listing.sizeSqm, AppLocalizations.of(context)!.sqmSuffix), style: AppFonts.tajawal(size: 12, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6))),
+                      Text(formatSqm(listing.size, listing.sizeUnit.label(context)), style: AppFonts.tajawal(size: 12, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6))),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.s4),

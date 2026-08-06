@@ -47,6 +47,21 @@ _MIN_HINTS = ["over", "above", "more than", "at least", "min", "minimum", "start
 
 _SIZE_UNITS = ["feddan", "feddans", "acre", "acres", "m2", "sqm", "sq m", "square meter", "square metre", "meter", "metre"]
 
+# How many m² each recognised unit is worth. Size bounds are stored normalised to
+# m² so a profile that picks up "5 feddan" on one turn and "min 2000 sqm" on the
+# next stays comparable — and so they can be matched against Listing.size_sqm.
+# An acre (4,046.86 m²) is within 4% of a feddan, and locally the two words are
+# used interchangeably, so the distinction doesn't change which listings match.
+_SQM_PER_UNIT = {
+    "feddan": 4200.0, "feddans": 4200.0,
+    "acre": 4046.86, "acres": 4046.86,
+    "m2": 1.0, "sqm": 1.0, "sq m": 1.0,
+    "square meter": 1.0, "square metre": 1.0, "meter": 1.0, "metre": 1.0,
+}
+
+# Which unit to phrase the profile summary back in, per unit word.
+_UNIT_FAMILY = {u: ("feddan" if f > 1.0 else "sqm") for u, f in _SQM_PER_UNIT.items()}
+
 
 def _to_number(raw: str, suffix: str) -> float:
     """Turns a captured number + optional magnitude suffix into a float.
@@ -123,10 +138,19 @@ def _extract_budget(text: str) -> dict:
 
 
 def _extract_size(text: str) -> dict:
+    """Size bounds, normalised to m².
+
+    The unit word is part of the meaning, not decoration: "5 feddan" is 21,000 m²,
+    and dropping the unit (as this used to) made it indistinguishable from 5 m².
+    `size_unit` records the family the buyer spoke in, purely so the profile can be
+    read back to them in the same terms.
+    """
     prefs: dict = {}
-    unit_group = "|".join(re.escape(u) for u in _SIZE_UNITS)
+    # Longest-first so "square metre" wins over "metre" and "feddans" over "feddan".
+    unit_group = "|".join(re.escape(u) for u in sorted(_SIZE_UNITS, key=len, reverse=True))
     for m in re.finditer(rf"{_NUMBER}\s*({unit_group})\b", text):
-        value = _to_number(m.group(1), m.group(2))
+        unit = m.group(3)
+        value = _to_number(m.group(1), m.group(2)) * _SQM_PER_UNIT[unit]
         hint = _nearest_hint(text, m.start())
         if hint == "max":
             prefs["size_max"] = value
@@ -134,6 +158,7 @@ def _extract_size(text: str) -> dict:
             prefs["size_min"] = value
         else:
             prefs["size_min"] = prefs["size_max"] = value
+        prefs["size_unit"] = _UNIT_FAMILY[unit]
     return prefs
 
 
@@ -206,13 +231,21 @@ def build_profile_summary(prefs: dict | None) -> str:
         parts.append(f"budget up to {int(prefs['budget_max']):,} EGP")
     elif prefs.get("budget_min") is not None:
         parts.append(f"budget from {int(prefs['budget_min']):,} EGP")
+    # Bounds are held in m²; read them back in whichever unit the buyer used.
+    unit = prefs.get("size_unit", "sqm")
+    divisor = 4200.0 if unit == "feddan" else 1.0
+    label = "feddan" if unit == "feddan" else "m^2"
+
+    def size(value: float) -> str:
+        return f"{value / divisor:g} {label}"
+
     if prefs.get("size_min") is not None and prefs.get("size_max") is not None:
         if prefs["size_min"] == prefs["size_max"]:
-            parts.append(f"around {prefs['size_min']:g} feddan/m^2")
+            parts.append(f"around {size(prefs['size_min'])}")
         else:
-            parts.append(f"size {prefs['size_min']:g}-{prefs['size_max']:g} feddan/m^2")
+            parts.append(f"size {prefs['size_min'] / divisor:g}-{size(prefs['size_max'])}")
     elif prefs.get("size_max") is not None:
-        parts.append(f"size up to {prefs['size_max']:g} feddan/m^2")
+        parts.append(f"size up to {size(prefs['size_max'])}")
     elif prefs.get("size_min") is not None:
-        parts.append(f"size from {prefs['size_min']:g} feddan/m^2")
+        parts.append(f"size from {size(prefs['size_min'])}")
     return ", ".join(parts)

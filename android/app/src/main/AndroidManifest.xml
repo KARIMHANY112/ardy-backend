@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Needed by release builds to reach the backend. The Flutter template only
+         declares this in the debug/profile manifests, which the release APK
+         doesn't merge, so without it every API call fails on an installed APK. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="ardi"
         android:name="${applicationName}"

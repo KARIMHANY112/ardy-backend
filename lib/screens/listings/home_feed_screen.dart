@@ -27,7 +27,7 @@ class HomeFeedScreen extends StatefulWidget {
 class _HomeFeedScreenState extends State<HomeFeedScreen> {
   // Same contact number used everywhere else in the app for reaching the
   // Ardi team directly — wa.me needs intl format, no leading 0.
-  static const _contactPhoneIntl = '201282092054';
+  static const _contactPhoneIntl = '201225675555';
 
   ListingFilters _filters = const ListingFilters();
   final _searchController = TextEditingController();

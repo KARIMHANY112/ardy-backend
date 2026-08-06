@@ -12,6 +12,7 @@ from app.models.models import (
     LicenseStatus,
     OfferType,
     RentPeriod,
+    SizeUnit,
 )
 
 
@@ -75,6 +76,9 @@ class ListingCreate(BaseModel):
     # rent figure is never ambiguous between monthly and yearly.
     rent_period: Optional[RentPeriod] = None
     size: float
+    # Defaults to sqm so existing clients keep working; land should send feddan
+    # explicitly rather than pre-converting, so the app can show what was advertised.
+    size_unit: SizeUnit = SizeUnit.sqm
     location: str
     description: Optional[str] = None
     latitude: Optional[float] = None
@@ -99,6 +103,10 @@ class ListingOut(BaseModel):
     price: float
     rent_period: Optional[RentPeriod] = None
     size: float
+    size_unit: SizeUnit
+    # `size` normalised to m². Sent so clients can compare/sort across units without
+    # duplicating the conversion factor; display should still use size + size_unit.
+    size_sqm: float
     location: str
     description: Optional[str]
     status: ListingStatus
@@ -127,6 +135,7 @@ class ListingUpdate(BaseModel):
     rent_period: Optional[RentPeriod] = None
     price: Optional[float] = None
     size: Optional[float] = None
+    size_unit: Optional[SizeUnit] = None
     location: Optional[str] = None
     description: Optional[str] = None
     latitude: Optional[float] = None

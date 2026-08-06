@@ -84,50 +84,12 @@ def get_listing(listing_id: str, db: Session = Depends(get_db)):
     return listing
 
 
-@router.post("", response_model=ListingOut)
-def submit_listing_request(
-    payload: ListingCreate,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_buyer),
-):
-    """User submits a listing — goes live immediately, same as an owner-posted listing."""
-    listing = Listing(
-        ref_code=generate_ref_code(db),
-        submitted_by=current_user.id,
-        status=ListingStatus.live,
-        **payload.model_dump(),
-    )
-    db.add(listing)
-    db.commit()
-    db.refresh(listing)
-
-    background_tasks.add_task(embed_and_store_listing, listing.id)
-
-    return listing
-
-
-@router.post("/{listing_id}/photos", response_model=ListingOut)
-def upload_listing_photo_endpoint(
-    listing_id: str,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_buyer),
-):
-    """User adds a photo to their own listing (works regardless of pending/live/rejected status)."""
-    listing = db.query(Listing).filter(Listing.id == listing_id, Listing.submitted_by == current_user.id).first()
-    if not listing:
-        raise HTTPException(status_code=404, detail="Listing not found")
-
-    try:
-        url = upload_listing_photo(file.file, listing_id)
-    except CloudinaryError as exc:
-        raise HTTPException(status_code=502, detail=f"Photo upload failed: {exc}") from exc
-
-    listing.photo_urls = [*listing.photo_urls, url]
-    db.commit()
-    db.refresh(listing)
-    return listing
+# Self-serve listing creation was removed from the app (the home feed's "+" hands
+# off to WhatsApp instead), but the buyer-facing POST /listings and its photo
+# upload stayed reachable on the API — any registered account could publish a live
+# listing straight to the public feed. Listings are now created only through the
+# owner dashboard endpoints below (POST /listings/dashboard and
+# POST /listings/dashboard/{id}/photos).
 
 
 @router.get("/mine/requests", response_model=list[ListingOut])

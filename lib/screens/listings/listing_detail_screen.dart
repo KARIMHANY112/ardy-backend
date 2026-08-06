@@ -36,8 +36,8 @@ class ListingDetailScreen extends StatefulWidget {
 class _ListingDetailScreenState extends State<ListingDetailScreen> {
   // The single contact number for arranging a deal — same number for every
   // listing regardless of who submitted it.
-  static const _contactPhone = '01282092054';
-  static const _contactPhoneIntl = '201282092054'; // wa.me needs intl format, no leading 0
+  static const _contactPhone = '01225675555';
+  static const _contactPhoneIntl = '201225675555'; // wa.me needs intl format, no leading 0
 
   late Future<Listing> _listingFuture;
   bool _isFavorite = false;
@@ -191,10 +191,12 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                             textBaseline: TextBaseline.alphabetic,
                             children: [
                               Text(listing.priceLabel(context), style: AppFonts.cairo(size: 26, weight: FontWeight.w800, color: AppColors.gold)),
-                              if (listing.sizeSqm > 0) ...[
+                              if (listing.size > 0) ...[
                                 const SizedBox(width: AppSpacing.s8),
                                 Text(
-                                  '${formatEgp((listing.price / listing.sizeSqm).round())}/${l10n.sqmSuffix}',
+                                  // Per the unit it was advertised in, so this reads as
+                                  // a price-per-feddan on land and per-m² on a shop.
+                                  '${formatEgp((listing.price / listing.size).round())}/${listing.sizeUnit.label(context)}',
                                   style: AppFonts.tajawal(size: 13, weight: FontWeight.w400, color: AppColors.inkAlpha(0.6)),
                                 ),
                               ],
@@ -211,7 +213,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                             crossAxisSpacing: 10,
                             childAspectRatio: 2.6,
                             children: [
-                              ListingFactCell(label: l10n.areaLabel, value: formatSqm(listing.sizeSqm, l10n.sqmSuffix)),
+                              ListingFactCell(label: l10n.areaLabel, value: formatSqm(listing.size, listing.sizeUnit.label(context))),
                               ListingFactCell(label: l10n.licenseFactLabel, value: listing.license.label(context)),
                               ListingFactCell(label: l10n.typeFactLabel, value: listing.category.label(context)),
                               // No "built year" field on the backend yet — ref code fills the
@@ -264,7 +266,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                               child: const Center(child: Icon(Icons.map_outlined, color: AppColors.divider, size: 32)),
                             ),
                           const SizedBox(height: AppSpacing.s16),
-                          AgentInfoCard(name: 'Mostafa Adel', subtitle: l10n.listingAgentSubtitle),
+                          AgentInfoCard(name: l10n.listingAgentName, subtitle: l10n.listingAgentSubtitle),
                         ],
                       ),
                     ),

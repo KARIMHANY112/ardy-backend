@@ -31,14 +31,29 @@ class TestExtractPreferences(unittest.TestCase):
         self.assertEqual(extract_preferences("my budget is 1.5m")["budget_max"], 1_500_000)
 
     def test_size_exact(self):
+        # Normalised to m²: 5 feddan is 21,000 m², not 5. Storing the bare number
+        # made "5 feddan" and "5 sqm" indistinguishable downstream.
         prefs = extract_preferences("around 5 feddan")
-        self.assertEqual(prefs["size_min"], 5)
-        self.assertEqual(prefs["size_max"], 5)
+        self.assertEqual(prefs["size_min"], 21_000)
+        self.assertEqual(prefs["size_max"], 21_000)
+        self.assertEqual(prefs["size_unit"], "feddan")
 
     def test_size_min_only(self):
         prefs = extract_preferences("at least 10 feddan of farmland")
-        self.assertEqual(prefs["size_min"], 10)
+        self.assertEqual(prefs["size_min"], 42_000)
         self.assertNotIn("size_max", prefs)
+
+    def test_size_in_sqm_is_unconverted(self):
+        prefs = extract_preferences("around 500 sqm")
+        self.assertEqual(prefs["size_min"], 500)
+        self.assertEqual(prefs["size_unit"], "sqm")
+
+    def test_feddan_and_sqm_are_comparable_after_normalising(self):
+        # The whole point: a feddan figure must come out larger than a sqm figure
+        # that is numerically bigger but physically much smaller.
+        feddan = extract_preferences("5 feddan")["size_min"]
+        sqm = extract_preferences("500 sqm")["size_min"]
+        self.assertGreater(feddan, sqm)
 
     def test_land_type_keywords(self):
         # Canonical values must match Listing.type exactly (land / factory / shop),
@@ -98,7 +113,7 @@ class TestExtractPreferences(unittest.TestCase):
         self.assertEqual(prefs["land_type"], "land")
         self.assertEqual(prefs["budget_max"], 800_000)
         self.assertEqual(prefs["location"], "minya")
-        self.assertEqual(prefs["size_min"], 5)
+        self.assertEqual(prefs["size_min"], 21_000)
 
 
 class TestMergePreferences(unittest.TestCase):
@@ -147,6 +162,20 @@ class TestProfileSummary(unittest.TestCase):
         self.assertIn("land", summary)
         self.assertIn("Giza", summary)
         self.assertIn("2,000,000 EGP", summary)
+
+    def test_size_read_back_in_the_unit_the_buyer_used(self):
+        # Bounds are stored in m²; a buyer who said "feddan" should see feddan back,
+        # not the 21,000 m² we match on internally.
+        summary = build_profile_summary({"size_max": 21_000, "size_unit": "feddan"})
+        self.assertIn("5 feddan", summary)
+        self.assertNotIn("21000", summary)
+
+    def test_size_defaults_to_sqm_when_unit_unknown(self):
+        self.assertIn("500 m^2", build_profile_summary({"size_max": 500}))
+
+    def test_size_round_trips_through_extraction(self):
+        prefs = extract_preferences("at least 3 feddan")
+        self.assertIn("3 feddan", build_profile_summary(prefs))
 
 
 if __name__ == "__main__":

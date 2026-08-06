@@ -23,7 +23,7 @@ Listing _listing({required String id, required String title, required OfferType 
       category: ListingCategory.shop,
       offerType: offerType,
       price: 1000,
-      sizeSqm: 100,
+      size: 100,
       location: 'Tanta',
       description: '',
       license: LicenseStatus.licensed,

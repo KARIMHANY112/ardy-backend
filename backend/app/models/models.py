@@ -1,8 +1,9 @@
 import uuid
 import enum
 
-from sqlalchemy import Column, String, Float, ForeignKey, DateTime, Enum, func
+from sqlalchemy import Column, String, Float, ForeignKey, DateTime, Enum, case, func
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
 
@@ -46,6 +47,18 @@ class RentPeriod(str, enum.Enum):
     usually let monthly here, while land and factories are commonly leased by the year."""
     monthly = "monthly"
     yearly = "yearly"
+
+
+class SizeUnit(str, enum.Enum):
+    """The unit `Listing.size` is expressed in. Land here is traded by the feddan,
+    while shops and factories are quoted in square metres, so the number alone is
+    ambiguous — 5 feddan and 5 m² are four orders of magnitude apart."""
+    sqm = "sqm"
+    feddan = "feddan"
+
+
+# One feddan is 4,200 m² — the standard Egyptian conversion.
+SQM_PER_FEDDAN = 4200.0
 
 
 class LicenseStatus(str, enum.Enum):
@@ -92,7 +105,14 @@ class Listing(Base):
     title = Column(String, nullable=False)
     type = Column(String, nullable=False)  # agricultural / residential / etc.
     price = Column(Float, nullable=False)
-    size = Column(Float, nullable=False)   # in feddan or m^2
+    size = Column(Float, nullable=False)   # expressed in `size_unit`, never assume m²
+
+    # Which unit `size` is in. Rows that predate this field were all entered in m²,
+    # so they default to sqm — matching what the UI used to hardcode for everyone.
+    size_unit = Column(
+        Enum(SizeUnit), nullable=False,
+        default=SizeUnit.sqm, server_default=SizeUnit.sqm.value,
+    )
     location = Column(String, nullable=False)
     description = Column(String, nullable=True)
 
@@ -133,6 +153,27 @@ class Listing(Base):
 
     submitted_by_user = relationship("User", back_populates="listings", foreign_keys=[submitted_by])
     favorited_by = relationship("Favorite", back_populates="listing")
+
+    @hybrid_property
+    def size_sqm(self) -> float:
+        """`size` normalised to m², so listings in different units can be compared.
+
+        Display code must still use `size` + `size_unit` — showing a feddan plot as
+        21,000 m² is accurate but not what the seller advertised.
+        """
+        # `==` not `is`: SizeUnit subclasses str, so this still holds if the
+        # attribute was set to the raw wire value rather than an enum member.
+        if self.size_unit == SizeUnit.feddan:
+            return self.size * SQM_PER_FEDDAN
+        return self.size
+
+    @size_sqm.expression
+    def size_sqm(cls):
+        """SQL form of the above, so size bounds can be filtered in the query."""
+        return case(
+            (cls.size_unit == SizeUnit.feddan, cls.size * SQM_PER_FEDDAN),
+            else_=cls.size,
+        )
 
     @property
     def submitted_by_name(self) -> str:
