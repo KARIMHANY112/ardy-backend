@@ -39,3 +39,8 @@ def terms_of_service():
 @router.get("/delete-account", response_class=HTMLResponse)
 def delete_account():
     return _render("delete_account.md")
+
+
+@router.get("/support", response_class=HTMLResponse)
+def support():
+    return _render("support.md")
