@@ -44,10 +44,10 @@ class AuthSession extends ChangeNotifier {
     await _applyToken(response as Map<String, dynamic>);
   }
 
-  Future<void> signup({required String name, required String phone, required String email, required String password}) async {
+  Future<void> signup({required String name, String? phone, required String email, required String password}) async {
     final response = await api.post('/auth/signup', body: {
       'name': name,
-      'phone': phone,
+      if (phone != null) 'phone': phone,
       'email': email,
       'password': password,
     });

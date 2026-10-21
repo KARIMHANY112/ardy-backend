@@ -51,7 +51,6 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _signUp() async {
     final l10n = AppLocalizations.of(context)!;
     if (_nameController.text.trim().isEmpty ||
-        _phoneController.text.trim().isEmpty ||
         _emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fillInAllFields)));
@@ -67,7 +66,7 @@ class _SignupScreenState extends State<SignupScreen> {
       final session = context.read<AuthSession>();
       await session.signup(
         name: _nameController.text.trim(),
-        phone: _phoneController.text.trim(),
+        phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
@@ -108,7 +107,7 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: AppSpacing.s20),
               LabeledInputField(label: l10n.fullName, controller: _nameController),
               const SizedBox(height: AppSpacing.s12),
-              LabeledInputField(label: l10n.phoneNumber, controller: _phoneController, keyboardType: TextInputType.phone),
+              LabeledInputField(label: l10n.phoneNumberOptional, controller: _phoneController, keyboardType: TextInputType.phone),
               const SizedBox(height: AppSpacing.s12),
               LabeledInputField(label: l10n.email, controller: _emailController, keyboardType: TextInputType.emailAddress),
               const SizedBox(height: AppSpacing.s12),

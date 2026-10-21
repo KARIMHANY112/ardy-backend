@@ -18,6 +18,7 @@
   "createYourAccount": "أنشئ حسابك",
   "fullName": "الاسم بالكامل",
   "phoneNumber": "رقم الهاتف",
+  "phoneNumberOptional": "رقم الهاتف (اختياري)",
   "email": "البريد الإلكتروني",
   "agreeToThePrefix": "أوافق على ",
   "termsLabel": "الشروط",

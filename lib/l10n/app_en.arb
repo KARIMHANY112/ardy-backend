@@ -19,6 +19,7 @@
   "createYourAccount": "Create your account",
   "fullName": "Full name",
   "phoneNumber": "Phone number",
+  "phoneNumberOptional": "Phone number (optional)",
   "email": "Email",
   "agreeToThePrefix": "I agree to the ",
   "termsLabel": "Terms",

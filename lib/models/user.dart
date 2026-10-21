@@ -17,7 +17,7 @@ AccountStatus accountStatusFromString(String value) => AccountStatus.values.firs
 class AppUser {
   final String id;
   final String name;
-  final String phone;
+  final String? phone;
   final String email;
   final UserRole role;
   final AccountStatus status;
@@ -25,7 +25,7 @@ class AppUser {
   AppUser({
     required this.id,
     required this.name,
-    required this.phone,
+    this.phone,
     required this.email,
     required this.role,
     required this.status,
@@ -34,7 +34,7 @@ class AppUser {
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
         id: json['id'] as String,
         name: json['name'] as String,
-        phone: json['phone'] as String,
+        phone: json['phone'] as String?,
         email: json['email'] as String,
         role: userRoleFromString(json['role'] as String),
         status: accountStatusFromString(json['status'] as String),
