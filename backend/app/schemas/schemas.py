@@ -20,7 +20,7 @@ from app.models.models import (
 
 class UserCreate(BaseModel):
     name: str
-    phone: str
+    phone: Optional[str] = None
     email: EmailStr
     password: str
     # No role field — every signup is a buyer (who can also list). Owner accounts
@@ -30,7 +30,7 @@ class UserCreate(BaseModel):
 class UserOut(BaseModel):
     id: uuid.UUID
     name: str
-    phone: str
+    phone: Optional[str] = None
     email: EmailStr
     role: UserRole
     status: UserStatus
@@ -153,7 +153,7 @@ class ListingDashboardOut(ListingOut):
     """ListingOut plus the seller's contact info — owner-dashboard endpoints only.
     Never used for the public browse/get endpoints, which stay seller-anonymous."""
     submitted_by_name: str
-    submitted_by_phone: str
+    submitted_by_phone: Optional[str] = None
 
 
 # ---- Favorites ----
@@ -184,7 +184,7 @@ class BuyRequestDashboardOut(BaseModel):
     id: uuid.UUID
     listing: ListingDashboardOut
     buyer_name: str
-    buyer_phone: str
+    buyer_phone: Optional[str] = None
     status: BuyRequestStatus
     created_at: datetime
 

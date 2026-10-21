@@ -6,7 +6,7 @@ This Privacy Policy explains how Ardy ("we," "us," "our") collects, uses, and sh
 
 ## 1. Information We Collect
 
-**Account information.** When you register, we collect your name, email address, phone number, and password (stored as a secure hash, never in plain text). You select a role — buyer, seller, or owner.
+**Account information.** When you register, we collect your name, email address, password, and, if you choose to give it, your phone number (stored as a secure hash, never in plain text). You select a role — buyer, seller, or owner.
 
 **Listing content.** If you post a listing, we collect the title, property type, price, size, location, description, and any photos you upload.
 

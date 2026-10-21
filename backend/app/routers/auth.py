@@ -20,17 +20,18 @@ RESET_CODE_TTL_MINUTES = 15
 
 @router.post("/signup", response_model=Token)
 def signup(payload: UserCreate, db: Session = Depends(get_db)):
+    phone = (payload.phone or "").strip() or None
     if db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     # users.phone is UNIQUE too. Without this check a duplicate number reached the
     # INSERT and surfaced as an unhandled IntegrityError — a 500 on what is really
     # ordinary user error.
-    if db.query(User).filter(User.phone == payload.phone).first():
+    if phone and db.query(User).filter(User.phone == phone).first():
         raise HTTPException(status_code=400, detail="Phone number already registered")
 
     user = User(
         name=payload.name,
-        phone=payload.phone,
+        phone=phone,
         email=payload.email,
         password_hash=hash_password(payload.password),
         role=UserRole.buyer,

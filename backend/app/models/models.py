@@ -72,7 +72,8 @@ class User(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False)
-    phone = Column(String, nullable=False, unique=True)
+    # Optional (App Store guideline 5.1.1(v)): not needed to use the app.
+    phone = Column(String, nullable=True, unique=True)
     email = Column(String, nullable=False, unique=True)
     password_hash = Column(String, nullable=False)
     role = Column(Enum(UserRole), nullable=False, default=UserRole.buyer)
@@ -180,7 +181,7 @@ class Listing(Base):
         return self.submitted_by_user.name
 
     @property
-    def submitted_by_phone(self) -> str:
+    def submitted_by_phone(self) -> str | None:
         return self.submitted_by_user.phone
 
 
@@ -259,5 +260,5 @@ class BuyRequest(Base):
         return self.user.name
 
     @property
-    def buyer_phone(self) -> str:
+    def buyer_phone(self) -> str | None:
         return self.user.phone
