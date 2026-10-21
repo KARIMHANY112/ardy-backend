@@ -47,7 +47,7 @@ class AuthSession extends ChangeNotifier {
   Future<void> signup({required String name, String? phone, required String email, required String password}) async {
     final response = await api.post('/auth/signup', body: {
       'name': name,
-      if (phone != null) 'phone': phone,
+      'phone': ?phone,
       'email': email,
       'password': password,
     });
