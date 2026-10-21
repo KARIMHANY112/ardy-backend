@@ -1,0 +1,7 @@
+207-180-252-140.sslip.io {
+	reverse_proxy api:8000
+}
+
+dash.207-180-252-140.sslip.io {
+	reverse_proxy dashboard:3000
+}

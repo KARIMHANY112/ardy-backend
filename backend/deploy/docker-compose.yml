@@ -1,0 +1,39 @@
+# Production stack on the Contabo server (/opt/ardy/repo/backend/deploy).
+# Deploy from your Mac with: sh backend/deploy/deploy.sh
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: always
+    env_file: .env.db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  api:
+    build: ..
+    restart: always
+    env_file: .env
+    depends_on:
+      - db
+
+  dashboard:
+    build:
+      context: ../../../dashboard
+      args:
+        NEXT_PUBLIC_API_BASE_URL: https://207-180-252-140.sslip.io
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+    restart: always
+
+  caddy:
+    image: caddy:2
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+
+volumes:
+  pgdata:
+  caddy_data:

@@ -69,3 +69,8 @@ backend/.env
 backend/venv/
 backend/__pycache__/
 **/__pycache__/
+
+# Server secrets
+backend/deploy/.env
+backend/deploy/.env.db
+backend/deploy/secrets/

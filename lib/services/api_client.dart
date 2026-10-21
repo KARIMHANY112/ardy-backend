@@ -20,7 +20,7 @@ class ApiClient {
   static const String _baseUrlOverride =
       String.fromEnvironment('ARDY_API_BASE_URL');
 
-  static const String _productionUrl = 'https://ardy-backend.onrender.com';
+  static const String _productionUrl = 'https://207-180-252-140.sslip.io';
 
   static String get baseUrl {
     if (_baseUrlOverride.isNotEmpty) return _baseUrlOverride;

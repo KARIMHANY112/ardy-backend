@@ -22,7 +22,10 @@ sentry_sdk.init(
 
 app = FastAPI(title="Ardy API", version="0.1.0")
 
-_origins = ["https://ardy-dashboard.onrender.com"]
+_origins = [
+    "https://dash.207-180-252-140.sslip.io",
+    "https://ardy-dashboard.onrender.com",
+]
 if settings.environment != "production":
     _origins.append("http://localhost:5000")
 
