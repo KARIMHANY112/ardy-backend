@@ -117,6 +117,10 @@ class Listing(Base):
     location = Column(String, nullable=False)
     description = Column(String, nullable=True)
 
+    # Number the seller entered on the submission form, for the admin to call before
+    # approving. Admin-only — never put this on a public schema.
+    contact_phone = Column(String, nullable=True)
+
     # Precise map pin, set when the submitter drops one in the app. Nullable —
     # older listings and free-text-only submissions won't have one.
     latitude = Column(Float, nullable=True)

@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.core.deps import get_current_user, require_owner, require_buyer
 from app.core.notifications import send_push_notification
 from app.core.storage import upload_listing_photo
-from app.models.models import BuyRequest, BuyRequestStatus, Listing, ListingStatus, OfferType, User
+from app.models.models import BuyRequest, BuyRequestStatus, Listing, ListingStatus, OfferType, User, UserRole
 from app.routers.advisor import embed_and_store_listing
 from app.schemas.schemas import (
     BuyRequestDashboardOut,
@@ -18,6 +18,7 @@ from app.schemas.schemas import (
     ListingCreate,
     ListingOut,
     ListingDashboardOut,
+    ListingReviewAction,
     ListingSaleAction,
     ListingUpdate,
 )
@@ -84,12 +85,76 @@ def get_listing(listing_id: str, db: Session = Depends(get_db)):
     return listing
 
 
-# Self-serve listing creation was removed from the app (the home feed's "+" hands
-# off to WhatsApp instead), but the buyer-facing POST /listings and its photo
-# upload stayed reachable on the API — any registered account could publish a live
-# listing straight to the public feed. Listings are now created only through the
-# owner dashboard endpoints below (POST /listings/dashboard and
-# POST /listings/dashboard/{id}/photos).
+# ---- Seller submissions ----
+#
+# Any signed-in user can submit a property from the app, but it lands as *pending*:
+# nothing reaches the public feed until the owner approves it from the dashboard.
+# (An earlier version published submissions straight to live, which is why the
+# endpoints were pulled for a while.)
+
+MAX_SUBMISSION_PHOTOS = 8
+
+
+@router.post("/requests", response_model=ListingOut)
+def submit_listing_request(
+    payload: ListingCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_buyer),
+):
+    """A user submits their property for review. Not embedded for the Land Advisor
+    yet — that happens on approval, so pending listings never show up in answers.
+    The contact phone is required here so the admin can call to verify; it's only
+    ever returned on owner-dashboard responses."""
+    if not payload.contact_phone:
+        raise HTTPException(status_code=400, detail="A phone number is required so we can contact you")
+    listing = Listing(
+        ref_code=generate_ref_code(db),
+        submitted_by=current_user.id,
+        status=ListingStatus.pending,
+        **payload.model_dump(),
+    )
+    db.add(listing)
+    db.commit()
+    db.refresh(listing)
+
+    for owner in db.query(User).filter(User.role == UserRole.owner).all():
+        background_tasks.add_task(
+            send_push_notification,
+            owner,
+            "New listing submitted",
+            f"{listing.ref_code} — {listing.title} is waiting for your review.",
+        )
+
+    return listing
+
+
+@router.post("/requests/{listing_id}/photos", response_model=ListingOut)
+def upload_submission_photo(
+    listing_id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_buyer),
+):
+    """Submitter attaches a photo to their own listing while it's still pending —
+    once the owner has reviewed it, photos are the owner's to manage."""
+    listing = db.query(Listing).filter(Listing.id == listing_id, Listing.submitted_by == current_user.id).first()
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    if listing.status != ListingStatus.pending:
+        raise HTTPException(status_code=400, detail="Photos can only be added while the listing is under review")
+    if len(listing.photo_urls) >= MAX_SUBMISSION_PHOTOS:
+        raise HTTPException(status_code=400, detail=f"A listing can have at most {MAX_SUBMISSION_PHOTOS} photos")
+
+    try:
+        url = upload_listing_photo(file.file, listing_id)
+    except CloudinaryError as exc:
+        raise HTTPException(status_code=502, detail=f"Photo upload failed: {exc}") from exc
+
+    listing.photo_urls = [*listing.photo_urls, url]
+    db.commit()
+    db.refresh(listing)
+    return listing
 
 
 @router.get("/mine/requests", response_model=list[ListingOut])
@@ -225,6 +290,53 @@ def upload_listing_photo_as_owner(
 @router.get("/dashboard/sold", response_model=list[ListingDashboardOut])
 def sold_listings(db: Session = Depends(get_db), current_user: User = Depends(require_owner)):
     return db.query(Listing).filter(Listing.status == ListingStatus.sold).order_by(Listing.sold_at.desc()).all()
+
+
+@router.get("/dashboard/pending", response_model=list[ListingDashboardOut])
+def pending_listings(db: Session = Depends(get_db), current_user: User = Depends(require_owner)):
+    """Seller submissions awaiting review, oldest first so nobody waits forever."""
+    return (
+        db.query(Listing)
+        .filter(Listing.status == ListingStatus.pending)
+        .order_by(Listing.created_at.asc())
+        .all()
+    )
+
+
+@router.post("/dashboard/{listing_id}/review", response_model=ListingDashboardOut)
+def review_listing(
+    listing_id: str,
+    payload: ListingReviewAction,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_owner),
+):
+    """Owner approves a submission (it goes live and gets embedded for the Land
+    Advisor) or rejects it. Only pending listings can be reviewed."""
+    listing = db.query(Listing).filter(Listing.id == listing_id).first()
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    if listing.status != ListingStatus.pending:
+        raise HTTPException(status_code=400, detail="Only listings under review can be approved or rejected")
+
+    listing.status = ListingStatus.live if payload.approve else ListingStatus.rejected
+    listing.reviewed_by = current_user.id
+    listing.reviewed_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(listing)
+
+    if payload.approve:
+        background_tasks.add_task(embed_and_store_listing, listing.id)
+
+    background_tasks.add_task(
+        send_push_notification,
+        listing.submitted_by_user,
+        "Listing approved" if payload.approve else "Listing not approved",
+        f"Your listing {listing.ref_code} "
+        + ("is now live on Ardi." if payload.approve else "was not approved. Contact us if you have questions."),
+    )
+
+    return listing
 
 
 @router.get("/dashboard/papers-pending", response_model=list[ListingDashboardOut])

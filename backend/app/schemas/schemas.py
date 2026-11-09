@@ -1,8 +1,9 @@
+import re
 import uuid
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, model_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 from app.models.models import (
     UserRole,
@@ -84,6 +85,19 @@ class ListingCreate(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     license_status: LicenseStatus = LicenseStatus.pending
+    # Seller's number for the admin to call. Required on app submissions (enforced
+    # in the endpoint); optional for listings the owner posts directly.
+    contact_phone: Optional[str] = Field(default=None, max_length=20)
+
+    @field_validator("contact_phone")
+    @classmethod
+    def normalise_contact_phone(cls, value):
+        if value is None:
+            return None
+        digits = re.sub(r"[^\d+]", "", value)
+        if not re.fullmatch(r"\+?\d{8,15}", digits):
+            raise ValueError("Enter a valid phone number")
+        return digits
 
     @model_validator(mode="after")
     def check_rent_period(self):
@@ -154,6 +168,8 @@ class ListingDashboardOut(ListingOut):
     Never used for the public browse/get endpoints, which stay seller-anonymous."""
     submitted_by_name: str
     submitted_by_phone: Optional[str] = None
+    # The number typed on the submission form — what the admin should call.
+    contact_phone: Optional[str] = None
 
 
 # ---- Favorites ----
@@ -194,6 +210,10 @@ class BuyRequestDashboardOut(BaseModel):
 
 class BuyRequestReviewAction(BaseModel):
     approve: bool  # true = approve, false = reject
+
+
+class ListingReviewAction(BaseModel):
+    approve: bool  # true = publish to the live feed, false = reject the submission
 
 
 # ---- Land Advisor ----
