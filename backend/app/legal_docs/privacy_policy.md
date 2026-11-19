@@ -1,6 +1,6 @@
 # Ardy Privacy Policy
 
-**Effective date:** August 10, 2026
+**Effective date:** November 19, 2026
 
 This Privacy Policy explains how Ardy ("we," "us," "our") collects, uses, and shares information when you use the Ardy mobile application and related services (the "App").
 
@@ -10,9 +10,11 @@ This Privacy Policy explains how Ardy ("we," "us," "our") collects, uses, and sh
 
 **Listing content.** If you post a listing, we collect the title, property type, price, size, location, description, and any photos you upload.
 
-**Land Advisor conversations.** When you use the Land Advisor chat feature, we collect the messages you send, the assistant's responses, and any stated preferences (e.g. property type, budget, location) used to tailor recommendations. These messages are sent to our AI provider, OpenAI, to generate responses (see Section 3).
+**Land Advisor conversations.** When you use the Land Advisor chat feature, we collect the messages you send, the assistant's responses, and any stated preferences (e.g. property type, budget, location) used to tailor recommendations. These messages are sent to our AI provider, OpenAI, to generate responses (see Section 3). The App asks for your permission before your first message is sent.
 
 **Favorites.** We record which listings you save as favorites.
+
+**Crash and performance data.** If the App crashes or runs into an error, we collect technical details about it (device model, operating system version, app version, and what the App was doing at the time) so we can fix the problem. This data is not used to identify you.
 
 ## 2. How We Use Information
 
@@ -26,6 +28,7 @@ We share limited data with the following third parties, solely to provide the Ap
 
 - **OpenAI** — processes the text of your Land Advisor conversations and generates vector embeddings of listing descriptions, in order to power the chat assistant and improve listing search/matching. OpenAI's own privacy policy and data-use terms govern how it handles this data on our behalf.
 - **Cloudinary** — stores and serves the photos you upload with your listings.
+- **Sentry** — receives crash and error reports from the App so we can find and fix bugs.
 
 Neither provider is authorized to use your data for purposes beyond providing services to us.
 

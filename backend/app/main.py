@@ -23,6 +23,7 @@ sentry_sdk.init(
 app = FastAPI(title="Ardy API", version="0.1.0")
 
 _origins = [
+    "https://dash.ardiegy.com",
     "https://dash.207-180-252-140.sslip.io",
     "https://ardy-dashboard.onrender.com",
 ]

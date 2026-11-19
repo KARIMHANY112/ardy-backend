@@ -20,7 +20,7 @@ services:
     build:
       context: ../../../dashboard
       args:
-        NEXT_PUBLIC_API_BASE_URL: https://207-180-252-140.sslip.io
+        NEXT_PUBLIC_API_BASE_URL: https://api.ardiegy.com
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
     restart: always
 
