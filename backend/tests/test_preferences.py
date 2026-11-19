@@ -180,3 +180,12 @@ class TestProfileSummary(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_reply_language_follows_the_buyer():
+    from app.routers.advisor import reply_language
+
+    assert reply_language("I want a factory under 20 million") == "English"
+    assert reply_language("عايز مصنع في 6 أكتوبر") == "Arabic"
+    assert reply_language("مصنع in 10th of Ramadan please") == "English"
+    assert reply_language("أرض في برج العرب 5000 sqm") == "Arabic"

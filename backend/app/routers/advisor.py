@@ -1,4 +1,5 @@
 import logging
+import re
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -136,6 +137,16 @@ def _search_listings(db: Session, query_embedding: list[float], prefs: dict, lim
     return ordered(base)
 
 
+_ARABIC = re.compile(r"[\u0600-\u06FF]")
+_LATIN = re.compile(r"[A-Za-z]")
+
+
+def reply_language(message: str) -> str:
+    """Language the buyer wrote in. Decided here, not left to the model: the
+    listings data is mostly Arabic and used to pull English chats into Arabic."""
+    return "Arabic" if len(_ARABIC.findall(message)) >= len(_LATIN.findall(message)) else "English"
+
+
 @router.post("/ask", response_model=AdvisorResponse)
 def ask_advisor(
     payload: AdvisorQuery,
@@ -186,10 +197,13 @@ def ask_advisor(
     if profile_summary:
         system_content += f"\n\nKnown buyer profile so far: {profile_summary}."
 
+    language = reply_language(payload.message)
     messages = [
         {"role": "system", "content": system_content},
         *prior_messages,
-        {"role": "user", "content": f"{payload.message}\n\nAvailable listings:\n{listings_summary}"},
+        {"role": "system", "content": f"Available listings:\n{listings_summary}"},
+        {"role": "user", "content": payload.message},
+        {"role": "system", "content": f"Write your whole reply in {language}, including listing names and details."},
     ]
 
     completion = client.chat.completions.create(model=settings.chat_model, messages=messages)
