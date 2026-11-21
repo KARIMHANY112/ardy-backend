@@ -1,3 +1,4 @@
+import logging
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -17,6 +18,8 @@ from app.schemas.schemas import FcmTokenUpdate, ForgotPasswordRequest, ResetPass
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 RESET_CODE_TTL_MINUTES = 15
+
+log = logging.getLogger("uvicorn.error")
 
 
 def normalize_email(email: str) -> str:
@@ -118,6 +121,9 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     # OAuth2PasswordRequestForm's "username" field is the user's email.
     user = find_user_by_email(db, form_data.username)
     if not user or not verify_password(form_data.password, user.password_hash):
+        # The email (never the password) and which check failed, so a support
+        # report of "I can't log in" can be traced to a typo or a missing account.
+        log.warning("login failed for %r: %s", form_data.username, "wrong password" if user else "no such account")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
     if user.status == UserStatus.rejected:
