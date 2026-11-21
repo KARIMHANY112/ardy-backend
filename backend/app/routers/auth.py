@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -18,10 +19,21 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 RESET_CODE_TTL_MINUTES = 15
 
 
+def normalize_email(email: str) -> str:
+    return email.strip().lower()
+
+
+def find_user_by_email(db: Session, email: str) -> User | None:
+    """Case- and whitespace-insensitive lookup. Phone keyboards and autofill often
+    capitalise the first letter or add a trailing space, and an exact match turned
+    those into "Invalid email or password"."""
+    return db.query(User).filter(func.lower(User.email) == normalize_email(email)).first()
+
+
 @router.post("/signup", response_model=Token)
 def signup(payload: UserCreate, db: Session = Depends(get_db)):
     phone = (payload.phone or "").strip() or None
-    if db.query(User).filter(User.email == payload.email).first():
+    if find_user_by_email(db, payload.email):
         raise HTTPException(status_code=400, detail="Email already registered")
     # users.phone is UNIQUE too. Without this check a duplicate number reached the
     # INSERT and surfaced as an unhandled IntegrityError — a 500 on what is really
@@ -32,7 +44,7 @@ def signup(payload: UserCreate, db: Session = Depends(get_db)):
     user = User(
         name=payload.name,
         phone=phone,
-        email=payload.email,
+        email=normalize_email(payload.email),
         password_hash=hash_password(payload.password),
         role=UserRole.buyer,
         status=UserStatus.approved,
@@ -55,7 +67,7 @@ def signup(payload: UserCreate, db: Session = Depends(get_db)):
 def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
     """Always returns the same response whether or not the email exists, so this
     endpoint can't be used to enumerate registered accounts."""
-    user = db.query(User).filter(User.email == payload.email).first()
+    user = find_user_by_email(db, payload.email)
     if user:
         code = f"{secrets.randbelow(1_000_000):06d}"
         user.reset_code_hash = hash_password(code)
@@ -68,7 +80,7 @@ def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db
 
 @router.post("/reset-password", response_model=Token)
 def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == payload.email).first()
+    user = find_user_by_email(db, payload.email)
     invalid = HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired reset code")
 
     if not user or not user.reset_code_hash or not user.reset_code_expires_at:
@@ -104,7 +116,7 @@ def update_fcm_token(
 @router.post("/login", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # OAuth2PasswordRequestForm's "username" field is the user's email.
-    user = db.query(User).filter(User.email == form_data.username).first()
+    user = find_user_by_email(db, form_data.username)
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
